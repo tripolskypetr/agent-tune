@@ -394,7 +394,6 @@ export const OneView = ({ id }: IOneViewProps) => {
     storage.setValue(
       items.map((row) => {
         if (row.id === id) {
-            debugger
           return data;
         }
         return row;
