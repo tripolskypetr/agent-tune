@@ -4,6 +4,7 @@ import {
   ITool,
   IToolArgumentMetadata,
   IToolDefinition,
+  IHistoryMessage,
 } from "../config/storage";
 
 function convertFromFinetune(fileContent: string): IStorageItem[] {
@@ -18,10 +19,10 @@ function convertFromFinetune(fileContent: string): IStorageItem[] {
 
     if (!messages || messages.length < 2) continue;
 
-    const inputMessage = messages.find(
-      (msg: any) => msg.role === "user" || msg.role === "system"
-    );
-    const outputMessage = messages.find((msg: any) => msg.role === "assistant");
+    // Separate history messages from input/output
+    const historyMessages = messages.slice(0, -2); // All except last two
+    const inputMessage = messages[messages.length - 2]; // Second to last
+    const outputMessage = messages[messages.length - 1]; // Last
 
     if (!inputMessage || !outputMessage) continue;
 
@@ -81,6 +82,29 @@ function convertFromFinetune(fileContent: string): IStorageItem[] {
         required: false,
       },
     };
+    const emptyHistoryMessage: IHistoryMessage = {
+      role: null,
+      content: "",
+    };
+
+    // Convert history messages
+    const history = {
+      message1: historyMessages[0]
+        ? { role: historyMessages[0].role, content: historyMessages[0].content || "" }
+        : emptyHistoryMessage,
+      message2: historyMessages[1]
+        ? { role: historyMessages[1].role, content: historyMessages[1].content || "" }
+        : emptyHistoryMessage,
+      message3: historyMessages[2]
+        ? { role: historyMessages[2].role, content: historyMessages[2].content || "" }
+        : emptyHistoryMessage,
+      message4: historyMessages[3]
+        ? { role: historyMessages[3].role, content: historyMessages[3].content || "" }
+        : emptyHistoryMessage,
+      message5: historyMessages[4]
+        ? { role: historyMessages[4].role, content: historyMessages[4].content || "" }
+        : emptyHistoryMessage,
+    };
 
     const storageItem: IStorageItem = {
       id: randomString(),
@@ -111,6 +135,7 @@ function convertFromFinetune(fileContent: string): IStorageItem[] {
         tool4: emptyTool,
         tool5: emptyTool,
       },
+      history: history,
     };
 
     storageItems.push(storageItem);
