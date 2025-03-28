@@ -290,8 +290,8 @@ export const fields: TypedField[] = [
   {
     type: FieldType.Paper,
     fields: [
-      createMessage("history", 2),
       createMessage("history", 1),
+      createMessage("history", 2),
       createMessage("history", 3),
       createMessage("history", 4),
       createMessage("history", 5),
