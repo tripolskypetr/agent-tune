@@ -382,9 +382,7 @@ interface IOneViewProps {
 }
 
 export const OneView = ({ id }: IOneViewProps) => {
-  const [data, setData] = useState<IStorageItem | null>(
-    () => storage.getValue().find((row) => row.id === id) ?? null
-  );
+  const [data, setData] = useState<IStorageItem | null>(null);
 
   const notify = useSnack();
 
@@ -434,7 +432,7 @@ export const OneView = ({ id }: IOneViewProps) => {
     <Container>
       <Breadcrumbs2 items={options} onAction={handleAction} />
       <One
-        handler={() => data}
+        handler={() => storage.getValue().find((row) => row.id === id) ?? null}
         fields={fields}
         onChange={(value, initial) => {
           if (!initial) {
