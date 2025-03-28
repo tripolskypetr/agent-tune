@@ -9,6 +9,7 @@ import {
   One,
   TypedField,
   useActualCallback,
+  useConfirm,
   useSnack,
 } from "react-declarative";
 import history from "../config/history";
@@ -243,6 +244,7 @@ export const fields: TypedField[] = [
     fields: [
       {
         type: FieldType.Text,
+        fieldBottomMargin: "2",
         readonly: true,
         name: "input.role",
         title: "Message Role",
@@ -250,6 +252,7 @@ export const fields: TypedField[] = [
       },
       {
         type: FieldType.Text,
+        fieldBottomMargin: "2",
         name: "input.content",
         title: "Message Content",
         description: "Enter the message content",
@@ -379,12 +382,17 @@ interface IOneViewProps {
 }
 
 export const OneView = ({ id }: IOneViewProps) => {
-
-  const [data, setData] = useState<IStorageItem>(
+  const [data, setData] = useState<IStorageItem | null>(
     () => storage.getValue().find((row) => row.id === id) ?? null
   );
 
   const notify = useSnack();
+
+  const pickConfirm = useConfirm({
+    title: "Are you sure?",
+    msg: "You are going to leave the page without saving changes. Continue?",
+    canCancel: true,
+  });
 
   const handleSave = useActualCallback(() => {
     if (!data) {
@@ -394,18 +402,28 @@ export const OneView = ({ id }: IOneViewProps) => {
     storage.setValue(
       items.map((row) => {
         if (row.id === id) {
-          return data;
+          return { ...data, id };
         }
         return row;
       })
     );
+    setData(null);
     notify("Changes saved");
   });
 
+  const handleBack = async () => {
+    if (!data) {
+      history.push("/");
+      return;
+    }
+    if (await pickConfirm()) {
+      history.push("/");
+    }
+  };
+
   const handleAction = (action: string) => {
     if (action === "back-action") {
-      handleSave();
-      history.push("/");
+      handleBack();
     }
     if (action === "save-action") {
       handleSave();
@@ -415,7 +433,15 @@ export const OneView = ({ id }: IOneViewProps) => {
   return (
     <Container>
       <Breadcrumbs2 items={options} onAction={handleAction} />
-      <One fields={fields} onChange={(value) => setData(value)} />
+      <One
+        handler={() => data}
+        fields={fields}
+        onChange={(value, initial) => {
+          if (!initial) {
+            setData(value);
+          }
+        }}
+      />
     </Container>
   );
 };
