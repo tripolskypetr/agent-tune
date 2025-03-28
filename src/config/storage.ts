@@ -1,5 +1,10 @@
 import { createLsManager } from "react-declarative";
 
+export interface IHistoryMessage {
+    role: "user" | "system" | "assistant" | null;
+    content: string;
+}
+
 export interface IToolArgument {
     key: string;
     value: string;
@@ -61,6 +66,13 @@ export interface IStorageItem {
         tool4: IToolDefinition;
         tool5: IToolDefinition;
     };
+    history: {
+        message1: IHistoryMessage;
+        message2: IHistoryMessage;
+        message3: IHistoryMessage;
+        message4: IHistoryMessage;
+        message5: IHistoryMessage;
+    }
 }
 
 export const storage = createLsManager<IStorageItem[]>("jsonl_tune");

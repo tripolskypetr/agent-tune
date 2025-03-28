@@ -9,6 +9,36 @@ function convertToFinetune(storageItems: IStorageItem[]): string {
   const jsonlLines = storageItems
     .map((item) => {
       const messages = [
+        item.history.message1?.role
+          ? {
+              role: item.history.message1.role,
+              content: item.history.message1.content,
+            }
+          : null,
+        item.history.message2?.role
+          ? {
+              role: item.history.message2.role,
+              content: item.history.message2.content,
+            }
+          : null,
+        item.history.message3?.role
+          ? {
+              role: item.history.message3.role,
+              content: item.history.message3.content,
+            }
+          : null,
+        item.history.message4?.role
+          ? {
+              role: item.history.message4.role,
+              content: item.history.message4.content,
+            }
+          : null,
+        item.history.message5?.role
+          ? {
+              role: item.history.message5.role,
+              content: item.history.message5.content,
+            }
+          : null,
         {
           role: item.input.role,
           content: item.input.content,
@@ -70,7 +100,7 @@ function convertToFinetune(storageItems: IStorageItem[]): string {
 
       const openAIFormat = {
         messages: messages.filter(
-          (msg) => msg.content || msg.tool_calls?.length > 0
+          (msg) => msg && (msg.content || msg.tool_calls?.length > 0)
         ),
       };
 
