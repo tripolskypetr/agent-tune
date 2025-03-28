@@ -1,4 +1,4 @@
-import { Add, Delete, Edit, Publish, Save } from "@mui/icons-material";
+import { Add, CopyAll, Delete, Edit, Publish, Save } from "@mui/icons-material";
 import storage, { IStorageItem } from "../config/storage";
 import {
   Breadcrumbs2,
@@ -43,6 +43,11 @@ const columns: IGridColumn[] = [
 ];
 
 const rowActions: IGridAction[] = [
+  {
+    action: "copy-action",
+    label: "Make a copy",
+    icon: CopyAll,
+  },
   {
     action: "edit-action",
     label: "Edit",
@@ -90,6 +95,11 @@ export const GridView = () => {
   });
 
   const handleRowAction = (action: string, row: IStorageItem) => {
+    if (action === "copy-action") {
+        const items = storage.getValue();
+        storage.setValue([...items, { ...row, id: randomString() }]);
+        execute();
+    }
     if (action === "remove-action") {
       const items = storage.getValue();
       storage.setValue(items.filter(({ id }) => id !== row.id));

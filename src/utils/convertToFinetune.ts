@@ -135,18 +135,30 @@ function convertArgMetadata(arg: IToolArgumentMetadata): any {
 }
 
 function convertToolCall(tool: ITool): any {
+  const args: { [key: string]: any } = {};
+
+  if (tool.arg1?.key && tool.arg1.key.trim() !== "") {
+    args[tool.arg1.key] = tool.arg1.value;
+  }
+  if (tool.arg2?.key && tool.arg2.key.trim() !== "") {
+    args[tool.arg2.key] = tool.arg2.value;
+  }
+  if (tool.arg3?.key && tool.arg3.key.trim() !== "") {
+    args[tool.arg3.key] = tool.arg3.value;
+  }
+  if (tool.arg4?.key && tool.arg4.key.trim() !== "") {
+    args[tool.arg4.key] = tool.arg4.value;
+  }
+  if (tool.arg5?.key && tool.arg5.key.trim() !== "") {
+    args[tool.arg5.key] = tool.arg5.value;
+  }
+
   return {
     id: `call_${Math.random().toString(36).substr(2, 9)}`,
     type: "function",
     function: {
       name: tool.name,
-      arguments: JSON.stringify({
-        [tool.arg1.key]: tool.arg1.value,
-        [tool.arg2.key]: tool.arg2.value,
-        [tool.arg3.key]: tool.arg3.value,
-        [tool.arg4.key]: tool.arg4.value,
-        [tool.arg5.key]: tool.arg5.value,
-      }),
+      arguments: JSON.stringify(args),
     },
   };
 }
