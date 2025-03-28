@@ -19,10 +19,6 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import { CssBaseline } from "@mui/material";
 
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/sw-cache.js");
-}
-
 const container = document.getElementById("root")!;
 
 const muiCache = createCache({
