@@ -213,6 +213,55 @@ const createToolOutput = (name: string): TypedField => ({
   ],
 });
 
+const createMessage = (name: string, index: number): TypedField => ({
+  type: FieldType.Outline,
+  fieldBottomMargin: "3",
+  fields: [
+    {
+      type: FieldType.Combo,
+      fieldBottomMargin: "5",
+      name: `${name}.message${index}.role`,
+      labelShrink: true,
+      title: "Message role",
+      description: "Select to unlock the content",
+      itemList: ["user", "assistant", "system"],
+    },
+    {
+      type: FieldType.Text,
+      fieldBottomMargin: "2",
+      inputRows: 5,
+      name: `${name}.message${index}.content`,
+      isVisible: (data) => {
+        return get(data, `${name}.message${index}.role`) === "user";
+      },
+      title: "",
+      placeholder: `Message ${index} content (user)`,
+    },
+    {
+      type: FieldType.Text,
+      fieldBottomMargin: "2",
+      inputRows: 5,
+      name: `${name}.message${index}.content`,
+      isVisible: (data) => {
+        return get(data, `${name}.message${index}.role`) === "assistant";
+      },
+      title: "",
+      placeholder: `Message ${index} content (assistant)`,
+    },
+    {
+      type: FieldType.Text,
+      fieldBottomMargin: "2",
+      inputRows: 5,
+      name: `${name}.message${index}.content`,
+      isVisible: (data) => {
+        return get(data, `${name}.message${index}.role`) === "system";
+      },
+      title: "",
+      placeholder: `Message ${index} content (system)`,
+    },
+  ],
+});
+
 export const fields: TypedField[] = [
   {
     type: FieldType.Init,
@@ -233,6 +282,20 @@ export const fields: TypedField[] = [
     type: FieldType.Init,
     name: "input.role",
     defaultValue: "user",
+  },
+  {
+    type: FieldType.Line,
+    title: "Conversation context",
+  },
+  {
+    type: FieldType.Paper,
+    fields: [
+      createMessage("history", 2),
+      createMessage("history", 1),
+      createMessage("history", 3),
+      createMessage("history", 4),
+      createMessage("history", 5),
+    ],
   },
   {
     type: FieldType.Line,
