@@ -15,6 +15,8 @@ import {
   useSnack,
   getInitialData,
   IBreadcrumbs2Action,
+  useActualState,
+  sleep,
 } from "react-declarative";
 import history from "../config/history";
 import { useState } from "react";
@@ -123,6 +125,127 @@ const createTool = (name: string): TypedField => ({
   ],
 });
 
+const createToolOutputArgument = (name: string, index: number): TypedField[] => [
+  {
+    type: FieldType.Combo,
+    itemList: (data: IStorageItem) => {
+      const toolName = get(data, `${name}.name`);
+      if (!toolName) {
+        return [];
+      }
+      const tool = [
+        data.input.tool1,
+        data.input.tool2,
+        data.input.tool3,
+        data.input.tool4,
+        data.input.tool5,
+      ].find(({ name }) => name === toolName);
+      if (!tool) {
+        return [];
+      }
+      return [
+        tool.arg1.name,
+        tool.arg2.name,
+        tool.arg3.name,
+        tool.arg4.name,
+        tool.arg5.name,
+      ].filter(Boolean);
+    },
+    isVisible: (data) => {
+      return get(data, `${name}.name`);
+    },
+    columns: "4",
+    name: `${name}.arg${index}.key`,
+    title: `Argument ${index} Key`,
+    labelShrink: true,
+    placeholder: "Type a name to unlock the value",
+  },
+  {
+    type: FieldType.Text,
+    isVisible: (data: IStorageItem) => {
+      const toolName = `${name}.name`;
+      const argumentName = `${name}.arg${index}.key`;
+      if (!get(data, toolName)) {
+        return false;
+      }
+      if (!get(data, argumentName)) {
+        return false;
+      }
+      const tool = [
+        data.input.tool1,
+        data.input.tool2,
+        data.input.tool3,
+        data.input.tool4,
+        data.input.tool5,
+      ].find(({ name }) => name === get(data, toolName));
+      const argument =  [
+        tool.arg1,
+        tool.arg2,
+        tool.arg3,
+        tool.arg4,
+        tool.arg5,
+      ].find(({ name }) => name === get(data, argumentName));
+      return !argument?.enum;
+    },
+    columns: "8",
+    name: `${name}.arg${index}.value`,
+    title: "",
+    placeholder: `Argument ${index} Value`,
+  },
+  {
+    type: FieldType.Combo,
+    freeSolo: true,
+    itemList: (data: IStorageItem) => {
+      const toolName = `${name}.name`;
+      const argumentName = `${name}.arg${index}.key`;
+      const tool = [
+        data.input.tool1,
+        data.input.tool2,
+        data.input.tool3,
+        data.input.tool4,
+        data.input.tool5,
+      ].find(({ name }) => name === get(data, toolName));
+      const argument =  [
+        tool.arg1,
+        tool.arg2,
+        tool.arg3,
+        tool.arg4,
+        tool.arg5,
+      ].find(({ name }) => name === get(data, argumentName));
+      return argument?.enum || [];
+    },
+    isVisible: (data: IStorageItem) => {
+      const toolName = `${name}.name`;
+      const argumentName = `${name}.arg${index}.key`;
+      if (!get(data, toolName)) {
+        return false;
+      }
+      if (!get(data, argumentName)) {
+        return false;
+      }
+      const tool = [
+        data.input.tool1,
+        data.input.tool2,
+        data.input.tool3,
+        data.input.tool4,
+        data.input.tool5,
+      ].find(({ name }) => name === get(data, toolName));
+      const argument =  [
+        tool.arg1,
+        tool.arg2,
+        tool.arg3,
+        tool.arg4,
+        tool.arg5,
+      ].find(({ name }) => name === get(data, argumentName));
+      return !!argument?.enum;
+    },
+    columns: "8",
+    name: `${name}.arg${index}.value`,
+    title: "",
+    placeholder: `Argument ${index} Value`,
+  },
+]
+
 const createToolOutput = (name: string, index: number): TypedField => ({
   type: FieldType.Group,
   fields: [
@@ -152,251 +275,23 @@ const createToolOutput = (name: string, index: number): TypedField => ({
       fields: [
         {
           type: FieldType.Group,
-          fields: [
-            {
-              type: FieldType.Combo,
-              itemList: (data: IStorageItem) => {
-                const toolName = get(data, `${name}.name`);
-                if (!toolName) {
-                  return [];
-                }
-                const tool = [
-                  data.input.tool1,
-                  data.input.tool2,
-                  data.input.tool3,
-                  data.input.tool4,
-                  data.input.tool5,
-                ].find(({ name }) => name === toolName);
-                if (!tool) {
-                  return [];
-                }
-                return [
-                  tool.arg1.name,
-                  tool.arg2.name,
-                  tool.arg3.name,
-                  tool.arg4.name,
-                  tool.arg5.name,
-                ].filter(Boolean);
-              },
-              isVisible: (data) => {
-                return get(data, `${name}.name`);
-              },
-              columns: "4",
-              name: `${name}.arg1.key`,
-              title: "Argument 1 Key",
-              labelShrink: true,
-              placeholder: "Type a name to unlock the value",
-            },
-            {
-              type: FieldType.Text,
-              isVisible: (data) => {
-                if (!get(data, `${name}.name`)) {
-                  return false;
-                }
-                return get(data, `${name}.arg1.key`);
-              },
-              columns: "8",
-              name: `${name}.arg1.value`,
-              title: "",
-              placeholder: "Argument 1 Value",
-            },
-          ],
+          fields: createToolOutputArgument(name, 1),
         },
         {
           type: FieldType.Group,
-          fields: [
-            {
-              type: FieldType.Combo,
-              itemList: (data: IStorageItem) => {
-                const toolName = get(data, `${name}.name`);
-                if (!toolName) {
-                  return [];
-                }
-                const tool = [
-                  data.input.tool1,
-                  data.input.tool2,
-                  data.input.tool3,
-                  data.input.tool4,
-                  data.input.tool5,
-                ].find(({ name }) => name === toolName);
-                if (!tool) {
-                  return [];
-                }
-                return [
-                  tool.arg1.name,
-                  tool.arg2.name,
-                  tool.arg3.name,
-                  tool.arg4.name,
-                  tool.arg5.name,
-                ].filter(Boolean);
-              },
-              columns: "4",
-              name: `${name}.arg2.key`,
-              title: "Argument 2 Key",
-              labelShrink: true,
-              placeholder: "Type a name to unlock the value",
-            },
-            {
-              type: FieldType.Text,
-              isVisible: (data) => {
-                if (!get(data, `${name}.name`)) {
-                  return false;
-                }
-                return get(data, `${name}.arg2.key`);
-              },
-              columns: "8",
-              name: `${name}.arg2.value`,
-              title: "",
-              placeholder: "Argument 2 Value",
-            },
-          ],
+          fields: createToolOutputArgument(name, 2),
         },
         {
           type: FieldType.Group,
-          fields: [
-            {
-              type: FieldType.Combo,
-              itemList: (data: IStorageItem) => {
-                const toolName = get(data, `${name}.name`);
-                if (!toolName) {
-                  return [];
-                }
-                const tool = [
-                  data.input.tool1,
-                  data.input.tool2,
-                  data.input.tool3,
-                  data.input.tool4,
-                  data.input.tool5,
-                ].find(({ name }) => name === toolName);
-                if (!tool) {
-                  return [];
-                }
-                return [
-                  tool.arg1.name,
-                  tool.arg2.name,
-                  tool.arg3.name,
-                  tool.arg4.name,
-                  tool.arg5.name,
-                ].filter(Boolean);
-              },
-              columns: "4",
-              name: `${name}.arg3.key`,
-              title: "Argument 3 Key",
-              labelShrink: true,
-              placeholder: "Type a name to unlock the value",
-            },
-            {
-              type: FieldType.Text,
-              isVisible: (data) => {
-                if (!get(data, `${name}.name`)) {
-                  return false;
-                }
-                return get(data, `${name}.arg3.key`);
-              },
-              columns: "8",
-              name: `${name}.arg3.value`,
-              title: "",
-              placeholder: "Argument 3 Value",
-            },
-          ],
+          fields: createToolOutputArgument(name, 3),
         },
         {
           type: FieldType.Group,
-          fields: [
-            {
-              type: FieldType.Combo,
-              itemList: (data: IStorageItem) => {
-                const toolName = get(data, `${name}.name`);
-                if (!toolName) {
-                  return [];
-                }
-                const tool = [
-                  data.input.tool1,
-                  data.input.tool2,
-                  data.input.tool3,
-                  data.input.tool4,
-                  data.input.tool5,
-                ].find(({ name }) => name === toolName);
-                if (!tool) {
-                  return [];
-                }
-                return [
-                  tool.arg1.name,
-                  tool.arg2.name,
-                  tool.arg3.name,
-                  tool.arg4.name,
-                  tool.arg5.name,
-                ].filter(Boolean);
-              },
-              columns: "4",
-              name: `${name}.arg4.key`,
-              title: "Argument 4 Key",
-              labelShrink: true,
-              placeholder: "Type a name to unlock the value",
-            },
-            {
-              type: FieldType.Text,
-              isVisible: (data) => {
-                if (!get(data, `${name}.name`)) {
-                  return false;
-                }
-                return get(data, `${name}.arg4.key`);
-              },
-              columns: "8",
-              name: `${name}.arg4.value`,
-              title: "",
-              placeholder: "Argument 4 Value",
-            },
-          ],
+          fields: createToolOutputArgument(name, 4),
         },
         {
           type: FieldType.Group,
-          fields: [
-            {
-              type: FieldType.Combo,
-              itemList: (data: IStorageItem) => {
-                const toolName = get(data, `${name}.name`);
-                if (!toolName) {
-                  return [];
-                }
-                const tool = [
-                  data.input.tool1,
-                  data.input.tool2,
-                  data.input.tool3,
-                  data.input.tool4,
-                  data.input.tool5,
-                ].find(({ name }) => name === toolName);
-                if (!tool) {
-                  return [];
-                }
-                return [
-                  tool.arg1.name,
-                  tool.arg2.name,
-                  tool.arg3.name,
-                  tool.arg4.name,
-                  tool.arg5.name,
-                ].filter(Boolean);
-              },
-              columns: "4",
-              name: `${name}.arg5.key`,
-              title: "Argument 5 Key",
-              labelShrink: true,
-              placeholder: "Type a name to unlock the value",
-            },
-            {
-              type: FieldType.Text,
-              isVisible: (data) => {
-                if (!get(data, `${name}.name`)) {
-                  return false;
-                }
-                return get(data, `${name}.arg5.key`);
-              },
-              columns: "8",
-              name: `${name}.arg5.value`,
-              title: "",
-              placeholder: "Argument 5 Value",
-            },
-          ],
+          fields: createToolOutputArgument(name, 5),
         },
       ],
     },
@@ -684,7 +579,7 @@ const polishData = async (data: IStorageItem) => {
 };
 
 export const OneView = ({ id }: IOneViewProps) => {
-  const [data, setData] = useState<IStorageItem | null>(null);
+  const [data$, setData] = useActualState<IStorageItem | null>(null);
 
   const notify = useSnack();
 
@@ -700,23 +595,23 @@ export const OneView = ({ id }: IOneViewProps) => {
   });
 
   const handleDraft = useActualCallback(() => {
-    if (!data) {
+    if (!data$.current) {
       notify("There are no changes to make a draft");
       return;
     }
     draft.setValue({
-      ...data,
+      ...data$.current,
       id,
     });
     notify("Changes saved as draft");
   });
 
   const handleSave = useActualCallback(async () => {
-    if (!data) {
+    if (!data$.current) {
       notify("There are no changes to save");
       return;
     }
-    const pendingData = await polishData(data);
+    const pendingData = await polishData(data$.current);
     {
       const { errors, valid } = validateToolCalls(pendingData);
       if (!valid) {
@@ -730,7 +625,7 @@ export const OneView = ({ id }: IOneViewProps) => {
       }
     }
     {
-      const { errors, valid } = validateMessageOrder(data);
+      const { errors, valid } = validateMessageOrder(pendingData);
       if (!valid) {
         pickAlert({
           title: "The invalid chat history order",
@@ -742,7 +637,7 @@ export const OneView = ({ id }: IOneViewProps) => {
       }
     }
     {
-      const { errors, valid } = validateMessageTools(data);
+      const { errors, valid } = validateMessageTools(pendingData);
       if (!valid) {
         pickAlert({
           title: "The invalid chat history tool calls",
@@ -773,7 +668,7 @@ export const OneView = ({ id }: IOneViewProps) => {
   });
 
   const handleBack = async () => {
-    if (!data) {
+    if (!data$.current) {
       history.push("/");
       return;
     }
@@ -790,7 +685,7 @@ export const OneView = ({ id }: IOneViewProps) => {
       handleBack();
     }
     if (action === "save-action") {
-      handleSave();
+      sleep(2_000).then(handleSave);
     }
   };
 
