@@ -128,7 +128,6 @@ const createToolOutput = (name: string): TypedField => ({
   fields: [
     {
       type: FieldType.Combo,
-      freeSolo: true,
       outlined: true,
       labelShrink: true,
       name: `${name}.name`,
@@ -152,124 +151,252 @@ const createToolOutput = (name: string): TypedField => ({
       },
       fields: [
         {
-          type: FieldType.Text,
-          isVisible: (data) => {
-            return get(data, `${name}.name`);
-          },
-          columns: "4",
-          name: `${name}.arg1.key`,
-          title: "Argument 1 Key",
-          labelShrink: true,
-          placeholder: "Type a name to unlock the value",
+          type: FieldType.Group,
+          fields: [
+            {
+              type: FieldType.Combo,
+              itemList: (data: IStorageItem) => {
+                const toolName = get(data, `${name}.name`);
+                if (!toolName) {
+                  return [];
+                }
+                const tool = [
+                  data.input.tool1,
+                  data.input.tool2,
+                  data.input.tool3,
+                  data.input.tool4,
+                  data.input.tool5,
+                ].find(({ name }) => name === toolName);
+                if (!tool) {
+                  return [];
+                }
+                return [
+                  tool.arg1.name,
+                  tool.arg2.name,
+                  tool.arg3.name,
+                  tool.arg4.name,
+                  tool.arg5.name,
+                ].filter(Boolean);
+              },
+              isVisible: (data) => {
+                return get(data, `${name}.name`);
+              },
+              columns: "4",
+              name: `${name}.arg1.key`,
+              title: "Argument 1 Key",
+              labelShrink: true,
+              placeholder: "Type a name to unlock the value",
+            },
+            {
+              type: FieldType.Text,
+              isVisible: (data) => {
+                if (!get(data, `${name}.name`)) {
+                  return false;
+                }
+                return get(data, `${name}.arg1.key`);
+              },
+              columns: "8",
+              name: `${name}.arg1.value`,
+              title: "",
+              placeholder: "Argument 1 Value",
+            },
+          ],
         },
         {
-          type: FieldType.Text,
-          isVisible: (data) => {
-            return get(data, `${name}.name`);
-          },
-          columns: "8",
-          name: `${name}.arg1.value`,
-          isDisabled: (data) => {
-            return !get(data, `${name}.arg1.key`);
-          },
-          title: "",
-          placeholder: "Argument 1 Value",
+          type: FieldType.Group,
+          fields: [
+            {
+              type: FieldType.Combo,
+              itemList: (data: IStorageItem) => {
+                const toolName = get(data, `${name}.name`);
+                if (!toolName) {
+                  return [];
+                }
+                const tool = [
+                  data.input.tool1,
+                  data.input.tool2,
+                  data.input.tool3,
+                  data.input.tool4,
+                  data.input.tool5,
+                ].find(({ name }) => name === toolName);
+                if (!tool) {
+                  return [];
+                }
+                return [
+                  tool.arg1.name,
+                  tool.arg2.name,
+                  tool.arg3.name,
+                  tool.arg4.name,
+                  tool.arg5.name,
+                ].filter(Boolean);
+              },
+              columns: "4",
+              name: `${name}.arg2.key`,
+              title: "Argument 2 Key",
+              labelShrink: true,
+              placeholder: "Type a name to unlock the value",
+            },
+            {
+              type: FieldType.Text,
+              isVisible: (data) => {
+                if (!get(data, `${name}.name`)) {
+                  return false;
+                }
+                return get(data, `${name}.arg2.key`);
+              },
+              columns: "8",
+              name: `${name}.arg2.value`,
+              title: "",
+              placeholder: "Argument 2 Value",
+            },
+          ],
         },
         {
-          type: FieldType.Text,
-          isVisible: (data) => {
-            return get(data, `${name}.name`);
-          },
-          columns: "4",
-          name: `${name}.arg2.key`,
-          title: "Argument 2 Key",
-          labelShrink: true,
-          placeholder: "Type a name to unlock the value",
+          type: FieldType.Group,
+          fields: [
+            {
+              type: FieldType.Combo,
+              itemList: (data: IStorageItem) => {
+                const toolName = get(data, `${name}.name`);
+                if (!toolName) {
+                  return [];
+                }
+                const tool = [
+                  data.input.tool1,
+                  data.input.tool2,
+                  data.input.tool3,
+                  data.input.tool4,
+                  data.input.tool5,
+                ].find(({ name }) => name === toolName);
+                if (!tool) {
+                  return [];
+                }
+                return [
+                  tool.arg1.name,
+                  tool.arg2.name,
+                  tool.arg3.name,
+                  tool.arg4.name,
+                  tool.arg5.name,
+                ].filter(Boolean);
+              },
+              columns: "4",
+              name: `${name}.arg3.key`,
+              title: "Argument 3 Key",
+              labelShrink: true,
+              placeholder: "Type a name to unlock the value",
+            },
+            {
+              type: FieldType.Text,
+              isVisible: (data) => {
+                if (!get(data, `${name}.name`)) {
+                  return false;
+                }
+                return get(data, `${name}.arg3.key`);
+              },
+              columns: "8",
+              name: `${name}.arg3.value`,
+              title: "",
+              placeholder: "Argument 3 Value",
+            },
+          ],
         },
         {
-          type: FieldType.Text,
-          isVisible: (data) => {
-            return get(data, `${name}.name`);
-          },
-          columns: "8",
-          name: `${name}.arg2.value`,
-          isDisabled: (data) => {
-            return !get(data, `${name}.arg2.key`);
-          },
-          title: "",
-          placeholder: "Argument 2 Value",
+          type: FieldType.Group,
+          fields: [
+            {
+              type: FieldType.Combo,
+              itemList: (data: IStorageItem) => {
+                const toolName = get(data, `${name}.name`);
+                if (!toolName) {
+                  return [];
+                }
+                const tool = [
+                  data.input.tool1,
+                  data.input.tool2,
+                  data.input.tool3,
+                  data.input.tool4,
+                  data.input.tool5,
+                ].find(({ name }) => name === toolName);
+                if (!tool) {
+                  return [];
+                }
+                return [
+                  tool.arg1.name,
+                  tool.arg2.name,
+                  tool.arg3.name,
+                  tool.arg4.name,
+                  tool.arg5.name,
+                ].filter(Boolean);
+              },
+              columns: "4",
+              name: `${name}.arg4.key`,
+              title: "Argument 4 Key",
+              labelShrink: true,
+              placeholder: "Type a name to unlock the value",
+            },
+            {
+              type: FieldType.Text,
+              isVisible: (data) => {
+                if (!get(data, `${name}.name`)) {
+                  return false;
+                }
+                return get(data, `${name}.arg4.key`);
+              },
+              columns: "8",
+              name: `${name}.arg4.value`,
+              title: "",
+              placeholder: "Argument 4 Value",
+            },
+          ],
         },
         {
-          type: FieldType.Text,
-          isVisible: (data) => {
-            return get(data, `${name}.name`);
-          },
-          columns: "4",
-          name: `${name}.arg3.key`,
-          title: "Argument 3 Key",
-          labelShrink: true,
-          placeholder: "Type a name to unlock the value",
-        },
-        {
-          type: FieldType.Text,
-          isVisible: (data) => {
-            return get(data, `${name}.name`);
-          },
-          columns: "8",
-          name: `${name}.arg3.value`,
-          isDisabled: (data) => {
-            return !get(data, `${name}.arg3.key`);
-          },
-          title: "",
-          placeholder: "Argument 3 Value",
-        },
-        {
-          type: FieldType.Text,
-          isVisible: (data) => {
-            return get(data, `${name}.name`);
-          },
-          columns: "4",
-          name: `${name}.arg4.key`,
-          title: "Argument 4 Key",
-          labelShrink: true,
-          placeholder: "Type a name to unlock the value",
-        },
-        {
-          type: FieldType.Text,
-          isVisible: (data) => {
-            return get(data, `${name}.name`);
-          },
-          columns: "8",
-          name: `${name}.arg4.value`,
-          isDisabled: (data) => {
-            return !get(data, `${name}.arg4.key`);
-          },
-          title: "",
-          placeholder: "Argument 4 Value",
-        },
-        {
-          type: FieldType.Text,
-          isVisible: (data) => {
-            return get(data, `${name}.name`);
-          },
-          columns: "4",
-          name: `${name}.arg5.key`,
-          title: "Argument 5 Key",
-          labelShrink: true,
-          placeholder: "Type a name to unlock the value",
-        },
-        {
-          type: FieldType.Text,
-          isVisible: (data) => {
-            return get(data, `${name}.name`);
-          },
-          columns: "8",
-          name: `${name}.arg5.value`,
-          isDisabled: (data) => {
-            return !get(data, `${name}.arg5.key`);
-          },
-          title: "",
-          placeholder: "Argument 5 Value",
+          type: FieldType.Group,
+          fields: [
+            {
+              type: FieldType.Combo,
+              itemList: (data: IStorageItem) => {
+                const toolName = get(data, `${name}.name`);
+                if (!toolName) {
+                  return [];
+                }
+                const tool = [
+                  data.input.tool1,
+                  data.input.tool2,
+                  data.input.tool3,
+                  data.input.tool4,
+                  data.input.tool5,
+                ].find(({ name }) => name === toolName);
+                if (!tool) {
+                  return [];
+                }
+                return [
+                  tool.arg1.name,
+                  tool.arg2.name,
+                  tool.arg3.name,
+                  tool.arg4.name,
+                  tool.arg5.name,
+                ].filter(Boolean);
+              },
+              columns: "4",
+              name: `${name}.arg5.key`,
+              title: "Argument 5 Key",
+              labelShrink: true,
+              placeholder: "Type a name to unlock the value",
+            },
+            {
+              type: FieldType.Text,
+              isVisible: (data) => {
+                if (!get(data, `${name}.name`)) {
+                  return false;
+                }
+                return get(data, `${name}.arg5.key`);
+              },
+              columns: "8",
+              name: `${name}.arg5.value`,
+              title: "",
+              placeholder: "Argument 5 Value",
+            },
+          ],
         },
       ],
     },
@@ -316,9 +443,7 @@ const createMessage = (name: string, index: number): TypedField => ({
       isVisible: (data) => {
         return get(data, `${name}.message${index}.role`) === "assistant";
       },
-      fields: [
-        createToolOutput(`${name}.message${index}.tool1`),
-      ]
+      fields: [createToolOutput(`${name}.message${index}.tool1`)],
     },
     {
       type: FieldType.Text,
@@ -597,7 +722,9 @@ export const OneView = ({ id }: IOneViewProps) => {
       if (!valid) {
         pickAlert({
           title: "The invalid tool calls",
-          description: errors.map((text, idx) => `${idx + 1}) ${text}`).join("\n\n")
+          description: errors
+            .map((text, idx) => `${idx + 1}) ${text}`)
+            .join("\n\n"),
         });
         return;
       }
@@ -607,7 +734,9 @@ export const OneView = ({ id }: IOneViewProps) => {
       if (!valid) {
         pickAlert({
           title: "The invalid chat history order",
-          description: errors.map((text, idx) => `${idx + 1}) ${text}`).join("\n\n")
+          description: errors
+            .map((text, idx) => `${idx + 1}) ${text}`)
+            .join("\n\n"),
         });
         return;
       }
@@ -617,7 +746,9 @@ export const OneView = ({ id }: IOneViewProps) => {
       if (!valid) {
         pickAlert({
           title: "The invalid chat history tool calls",
-          description: errors.map((text, idx) => `${idx + 1}) ${text}`).join("\n\n")
+          description: errors
+            .map((text, idx) => `${idx + 1}) ${text}`)
+            .join("\n\n"),
         });
         return;
       }
@@ -672,7 +803,7 @@ export const OneView = ({ id }: IOneViewProps) => {
           if (data?.id === id) {
             return data;
           }
-          return storage.getValue().find((row) => row.id === id) ?? null
+          return storage.getValue().find((row) => row.id === id) ?? null;
         }}
         fields={fields}
         onChange={(value, initial) => {
