@@ -22,6 +22,7 @@ import storage, { IStorageItem } from "../config/storage";
 import { validateToolCalls } from "../validation/validateToolCalls";
 import { validateMessageOrder } from "../validation/validateMessageOrder";
 import draft from "../config/draft";
+import { validateMessageTools } from "../validation/validateMessageTools";
 
 const createToolParameter = (name: string, index: number): TypedField => ({
   type: FieldType.Outline,
@@ -86,7 +87,6 @@ const createToolParameter = (name: string, index: number): TypedField => ({
 
 const createTool = (name: string): TypedField => ({
   type: FieldType.Group,
-  fieldBottomMargin: "4",
   fields: [
     {
       type: FieldType.Text,
@@ -107,7 +107,8 @@ const createTool = (name: string): TypedField => ({
       title: "Tool description",
     },
     {
-      type: FieldType.Fragment,
+      type: FieldType.Group,
+      fieldBottomMargin: "4",
       isVisible: (data) => {
         return get(data, `${name}.name`);
       },
@@ -276,7 +277,7 @@ const createMessage = (name: string, index: number): TypedField => ({
       labelShrink: true,
       title: "Message role",
       description: "Select to unlock the content",
-      itemList: ["user", "assistant", "system"],
+      itemList: ["user", "assistant", "system", "tool"],
     },
     {
       type: FieldType.Text,
@@ -291,7 +292,7 @@ const createMessage = (name: string, index: number): TypedField => ({
     },
     {
       type: FieldType.Text,
-      fieldBottomMargin: "2",
+      fieldBottomMargin: "4",
       inputRows: 5,
       name: `${name}.message${index}.content`,
       isVisible: (data) => {
@@ -299,6 +300,15 @@ const createMessage = (name: string, index: number): TypedField => ({
       },
       title: "",
       placeholder: `Message ${index} content (assistant)`,
+    },
+    {
+      type: FieldType.Fragment,
+      isVisible: (data) => {
+        return get(data, `${name}.message${index}.role`) === "assistant";
+      },
+      fields: [
+        createToolOutput(`${name}.message${index}.tool1`),
+      ]
     },
     {
       type: FieldType.Text,
@@ -310,6 +320,17 @@ const createMessage = (name: string, index: number): TypedField => ({
       },
       title: "",
       placeholder: `Message ${index} content (system)`,
+    },
+    {
+      type: FieldType.Text,
+      fieldBottomMargin: "2",
+      inputRows: 5,
+      name: `${name}.message${index}.content`,
+      isVisible: (data) => {
+        return get(data, `${name}.message${index}.role`) === "tool";
+      },
+      title: "",
+      placeholder: `Message ${index} content (tool)`,
     },
   ],
 });
@@ -576,6 +597,16 @@ export const OneView = ({ id }: IOneViewProps) => {
       if (!valid) {
         pickAlert({
           title: "The invalid chat history order",
+          description: errors.map((text, idx) => `${idx + 1}) ${text}`).join("\n\n")
+        });
+        return;
+      }
+    }
+    {
+      const { errors, valid } = validateMessageTools(data);
+      if (!valid) {
+        pickAlert({
+          title: "The invalid chat history tool calls",
           description: errors.map((text, idx) => `${idx + 1}) ${text}`).join("\n\n")
         });
         return;

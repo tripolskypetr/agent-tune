@@ -1,8 +1,9 @@
 import { createLsManager } from "react-declarative";
 
 export interface IHistoryMessage {
-    role: "user" | "system" | "assistant" | null;
+    role: "user" | "system" | "assistant" | "tool" | null;
     content: string;
+    tool1: ITool;
 }
 
 export interface IToolArgument {

@@ -92,7 +92,7 @@ export function validateToolCalls(item: IStorageItem): {
   };
 }
 
-function validateOutputTools(
+export function validateOutputTools(
   outputTools: ITool[],
   inputToolMap: Map<string, IToolDefinition>,
   context: string,
