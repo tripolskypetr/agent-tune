@@ -10,8 +10,8 @@
 - **Input Definition**: Specify user input messages with configurable tools and parameters.
 - **Output Configuration**: Define preferred and non-preferred outputs with content and associated tools.
 - **Tool Management**: Add up to five tools per input/output with customizable arguments (name, type, description, enum, required status).
-- ***Tool Name Autocomplete***: When selecting tools, the UI provides **autocomplete for tool names**, pulling from defined input tools to streamline selection.
-- ***Tool Enum Autocomplete***: For arguments with enum values, the form offers **autocomplete for predefined options**, enhancing accuracy and speed.
+- **Tool Name Autocomplete**: When selecting tools, the UI provides **autocomplete for tool names**, pulling from defined input tools to streamline selection.
+- **Tool Enum Autocomplete**: For arguments with enum values, the form offers **autocomplete for predefined options**, enhancing accuracy and speed.
 - **History with Tools**: Include multi-turn conversational context with tool calls in history messages (currently supporting `tool1` per message).
 - **Data Persistence**: Save changes to local storage and retrieve them by ID.
 - **JSONL Support**: Import/export datasets as JSONL files with automatic generation of unique `tool_call_id`s per OpenAI spec.
