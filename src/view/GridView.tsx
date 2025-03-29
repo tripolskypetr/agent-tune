@@ -1,4 +1,4 @@
-import { Add, CloudUpload, CopyAll, Delete, Edit, FileOpen, MoveToInbox, Outbox, Publish, Refresh, Save } from "@mui/icons-material";
+import { Add, CloudUpload, CopyAll, Delete, DeleteForever, Edit, FileOpen, MoveToInbox, Outbox, Publish, Refresh, Save } from "@mui/icons-material";
 import storage, { IStorageItem } from "../config/storage";
 import {
   Breadcrumbs2,
@@ -12,6 +12,7 @@ import {
   useAsyncValue,
   getInitialData,
   IBreadcrumbs2Action,
+  useConfirm,
 } from "react-declarative";
 import history from "../config/history";
 import { Container, Paper } from "@mui/material";
@@ -114,9 +115,24 @@ const actions: IBreadcrumbs2Action[] = [
     icon: MoveToInbox,
     action: "import-action",
   },
+  {
+    divider: true,
+  },
+  {
+    label: "Remove all",
+    icon: DeleteForever,
+    action: "remove-all-action",
+  }
 ];
 
 export const GridView = () => {
+
+  const pickConfirm = useConfirm({
+    title: "Are you sure?",
+    msg: "This action will remove everything from the card. Continue?",
+    canCancel: true,
+  });
+
   const [data, { loading, execute }] = useAsyncValue(() => {
     const items = storage.getValue();
     return items ? items : [];
@@ -169,7 +185,17 @@ export const GridView = () => {
     history.push(`/${newItem.id}`);
   };
 
+  const handleRemoveAll = async () => {
+    if (await pickConfirm().toPromise()) {
+      storage.setValue([]);
+      execute();
+    }
+  };
+
   const handleAction = async (action: string) => {
+    if (action === "remove-all-action") {
+      handleRemoveAll();
+    }
     if (action === "save-action") {
       downloadStorage(storage.getValue());
     }

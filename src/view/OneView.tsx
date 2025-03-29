@@ -577,7 +577,7 @@ export const OneView = ({ id }: IOneViewProps) => {
       history.push("/");
       return;
     }
-    if (await pickConfirm()) {
+    if (await pickConfirm().toPromise()) {
       history.push("/");
     }
   };
