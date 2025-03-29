@@ -2,6 +2,7 @@ import {
   Add,
   CloudUpload,
   CopyAll,
+  DataObject,
   Delete,
   DeleteForever,
   Edit,
@@ -137,6 +138,14 @@ const actions: IBreadcrumbs2Action[] = [
     label: "Load",
     icon: FileOpen,
     action: "load-action",
+  },
+  {
+    divider: true,
+  },
+  {
+    action: "code-action",
+    label: "Tool builder",
+    icon: DataObject,
   },
   {
     divider: true,
@@ -301,6 +310,9 @@ export const GridView = () => {
     }
     if (action === "import-action") {
       handleImport();
+    }
+    if (action === "code-action") {
+      history.push(`/tool`);
     }
   };
 
