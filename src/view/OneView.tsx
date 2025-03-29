@@ -371,7 +371,6 @@ export const fields: TypedField[] = [
   },
   {
     type: FieldType.Expansion,
-    expansionOpened: true,
     title: "Chat history",
     description: "Several chat messages to get the model to Context",
     fields: [
