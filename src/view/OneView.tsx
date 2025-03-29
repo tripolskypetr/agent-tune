@@ -399,7 +399,7 @@ export const fields: TypedField[] = [
       },
       {
         type: FieldType.Text,
-        fieldBottomMargin: "2",
+        fieldBottomMargin: "5",
         name: "input.content",
         title: "Message Content",
         description: "Enter the message content",
