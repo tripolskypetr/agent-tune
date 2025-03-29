@@ -13,30 +13,55 @@ function convertToFinetune(storageItems: IStorageItem[]): string {
           ? {
               role: item.history.message1.role,
               content: item.history.message1.content,
+              ...(item.history.message1.role === "assistant" && item.history.message1.tool1?.name
+                ? {
+                    tool_calls: [convertToolCall(item.history.message1.tool1)],
+                  }
+                : {}),
             }
           : null,
         item.history.message2?.role
           ? {
               role: item.history.message2.role,
               content: item.history.message2.content,
+              ...(item.history.message2.role === "assistant" && item.history.message2.tool1?.name
+                ? {
+                    tool_calls: [convertToolCall(item.history.message2.tool1)],
+                  }
+                : {}),
             }
           : null,
         item.history.message3?.role
           ? {
               role: item.history.message3.role,
               content: item.history.message3.content,
+              ...(item.history.message3.role === "assistant" && item.history.message3.tool1?.name
+                ? {
+                    tool_calls: [convertToolCall(item.history.message3.tool1)],
+                  }
+                : {}),
             }
           : null,
         item.history.message4?.role
           ? {
               role: item.history.message4.role,
               content: item.history.message4.content,
+              ...(item.history.message4.role === "assistant" && item.history.message4.tool1?.name
+                ? {
+                    tool_calls: [convertToolCall(item.history.message4.tool1)],
+                  }
+                : {}),
             }
           : null,
         item.history.message5?.role
           ? {
               role: item.history.message5.role,
               content: item.history.message5.content,
+              ...(item.history.message5.role === "assistant" && item.history.message5.tool1?.name
+                ? {
+                    tool_calls: [convertToolCall(item.history.message5.tool1)],
+                  }
+                : {}),
             }
           : null,
         {
@@ -183,8 +208,11 @@ function convertToolCall(tool: ITool): any {
     args[tool.arg5.key] = tool.arg5.value;
   }
 
+  // Generate a random tool_call_id per OpenAI spec
+  const toolCallId = `call_${Math.random().toString(36).substr(2, 9)}`;
+
   return {
-    id: `call_${Math.random().toString(36).substr(2, 9)}`,
+    id: toolCallId,
     type: "function",
     function: {
       name: tool.name,

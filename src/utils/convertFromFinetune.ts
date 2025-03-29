@@ -85,24 +85,25 @@ function convertFromFinetune(fileContent: string): IStorageItem[] {
     const emptyHistoryMessage: IHistoryMessage = {
       role: null,
       content: "",
+      tool1: emptyTool, // Add tool1 to empty message structure
     };
 
-    // Convert history messages
+    // Convert history messages with tool support
     const history = {
       message1: historyMessages[0]
-        ? { role: historyMessages[0].role, content: historyMessages[0].content || "" }
+        ? convertHistoryMessage(historyMessages[0], emptyTool)
         : emptyHistoryMessage,
       message2: historyMessages[1]
-        ? { role: historyMessages[1].role, content: historyMessages[1].content || "" }
+        ? convertHistoryMessage(historyMessages[1], emptyTool)
         : emptyHistoryMessage,
       message3: historyMessages[2]
-        ? { role: historyMessages[2].role, content: historyMessages[2].content || "" }
+        ? convertHistoryMessage(historyMessages[2], emptyTool)
         : emptyHistoryMessage,
       message4: historyMessages[3]
-        ? { role: historyMessages[3].role, content: historyMessages[3].content || "" }
+        ? convertHistoryMessage(historyMessages[3], emptyTool)
         : emptyHistoryMessage,
       message5: historyMessages[4]
-        ? { role: historyMessages[4].role, content: historyMessages[4].content || "" }
+        ? convertHistoryMessage(historyMessages[4], emptyTool)
         : emptyHistoryMessage,
     };
 
@@ -142,6 +143,25 @@ function convertFromFinetune(fileContent: string): IStorageItem[] {
   }
 
   return storageItems;
+}
+
+function convertHistoryMessage(
+  message: any,
+  emptyTool: ITool
+): IHistoryMessage {
+  const baseMessage = {
+    role: message.role,
+    content: message.content || "",
+    tool1: emptyTool,
+  };
+
+  if (message.role === "assistant" && message.tool_calls?.length) {
+    // Only support tool1 for history messages as per current UI structure
+    const toolCall = message.tool_calls[0];
+    baseMessage.tool1 = convertToolCallToTool(toolCall);
+  }
+
+  return baseMessage;
 }
 
 function convertToolToDefinition(func: any, index: number): IToolDefinition {

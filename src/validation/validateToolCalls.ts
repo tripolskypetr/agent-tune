@@ -1,179 +1,185 @@
 import {
-  IStorageItem,
-  ITool,
-  IToolArgumentMetadata,
-  IToolDefinition,
+    IStorageItem,
+    ITool,
+    IToolArgument,
+    IToolArgumentMetadata,
+    IToolDefinition,
 } from "../config/storage";
 
 export function validateToolCalls(item: IStorageItem): {
-  valid: boolean;
-  errors: string[];
+    valid: boolean;
+    errors: string[];
 } {
-  const errors: string[] = [];
+    const errors: string[] = [];
+    const inputToolMap = buildInputToolMap(item.input, errors);
 
-  const outputTools = {
-    preferred: [
-      item.preferred_output.tool1,
-      item.preferred_output.tool2,
-      item.preferred_output.tool3,
-      item.preferred_output.tool4,
-      item.preferred_output.tool5,
-    ],
-    nonPreferred: [
-      item.non_preferred_output.tool1,
-      item.non_preferred_output.tool2,
-      item.non_preferred_output.tool3,
-      item.non_preferred_output.tool4,
-      item.non_preferred_output.tool5,
-    ],
-  };
+    validateOutputTools(
+        outputToolsFrom(item.preferred_output),
+        inputToolMap,
+        "preferred_output",
+        errors
+    );
+    validateOutputTools(
+        outputToolsFrom(item.non_preferred_output),
+        inputToolMap,
+        "non_preferred_output",
+        errors
+    );
 
-  const inputTools = [
-    item.input.tool1,
-    item.input.tool2,
-    item.input.tool3,
-    item.input.tool4,
-    item.input.tool5,
-  ];
-
-  const inputToolMap = new Map<string, IToolDefinition>();
-  inputTools.forEach((toolDef, index) => {
-    const toolPosition = `tool${index + 1}`;
-    
-    if (!toolDef) return;
-
-    // Validate input tool parameter names
-    const parameterNames = new Set<string>();
-    for (let argNum = 1; argNum <= 5; argNum++) {
-      const argKey = `arg${argNum}` as keyof IToolDefinition;
-      const arg = toolDef[argKey];
-
-      if (typeof arg === "string") {
-        continue;
-      }
-      
-      if (arg?.name) {
-        if (parameterNames.has(arg.name)) {
-          errors.push(
-            `input.${toolPosition}.${argKey}: Duplicate parameter name '${arg.name}'`
-          );
-        } else {
-          parameterNames.add(arg.name);
-        }
-      }
-    }
-
-    if (toolDef.name) {
-      if (inputToolMap.has(toolDef.name)) {
-        errors.push(
-          `input.${toolPosition}: Tool name '${toolDef.name}' is not unique`
-        );
-      }
-      inputToolMap.set(toolDef.name, toolDef);
-    }
-  });
-
-  validateOutputTools(
-    outputTools.preferred,
-    inputToolMap,
-    "preferred_output",
-    errors
-  );
-  validateOutputTools(
-    outputTools.nonPreferred,
-    inputToolMap,
-    "non_preferred_output",
-    errors
-  );
-
-  return {
-    valid: errors.length === 0,
-    errors,
-  };
+    return {
+        valid: errors.length === 0,
+        errors,
+    };
 }
 
-function validateOutputTools(
-  outputTools: ITool[],
-  inputToolMap: Map<string, IToolDefinition>,
-  context: string,
-  errors: string[]
-) {
-  outputTools.forEach((tool, index) => {
-    const toolPosition = `tool${index + 1}`;
+function buildInputToolMap(
+    input: IStorageItem["input"],
+    errors: string[]
+): Map<string, IToolDefinition> {
+    const inputToolMap = new Map<string, IToolDefinition>();
+    const tools = [input.tool1, input.tool2, input.tool3, input.tool4, input.tool5];
 
-    if (!tool?.name) return;
+    tools.forEach((toolDef, index) => {
+        if (!toolDef?.name) return;
 
-    const toolDef = inputToolMap.get(tool.name);
-    if (!toolDef) {
-      errors.push(
-        `${context}.${toolPosition}: Tool '${tool.name}' is not defined in input`
-      );
-      return;
-    }
+        const toolPosition = `tool${index + 1}`;
 
-    // Track parameter names to check for duplicates
-    const parameterNames = new Set<string>();
+        const paramNames = new Set<string>();
+        const args = [toolDef.arg1, toolDef.arg2, toolDef.arg3, toolDef.arg4, toolDef.arg5]
+            .filter(arg => arg?.name) as IToolArgumentMetadata[];
 
-    for (let argNum = 1; argNum <= 5; argNum++) {
-      const argKey = `arg${argNum}` as keyof ITool;
-      const arg = tool[argKey];
+        args.forEach((arg, argIndex) => {
+            if (paramNames.has(arg.name)) {
+                errors.push(
+                    `input.${toolPosition}.arg${argIndex + 1}: Duplicate parameter name '${arg.name}'`
+                );
+            }
+            paramNames.add(arg.name);
+        });
 
-      if (typeof arg === "string") {
-        continue;
-      }
-
-      // Check for duplicate parameter names
-      if (arg?.key) {
-        if (parameterNames.has(arg.key)) {
-          errors.push(
-            `${context}.${toolPosition}.${argKey}: Duplicate parameter name '${arg.key}'`
-          );
+        if (inputToolMap.has(toolDef.name)) {
+            errors.push(`input.${toolPosition}: Duplicate tool name '${toolDef.name}'`);
         } else {
-          parameterNames.add(arg.key);
+            inputToolMap.set(toolDef.name, toolDef);
         }
-      }
+    });
 
-      // Existing validation checks
-      const argDef = toolDef[argKey] as IToolArgumentMetadata | undefined;
+    return inputToolMap;
+}
 
-      if (!argDef?.name) continue;
+function outputToolsFrom(output: IStorageItem["preferred_output" | "non_preferred_output"]) {
+    return [output.tool1, output.tool2, output.tool3, output.tool4, output.tool5];
+}
 
-      if (argDef.required && (!arg?.key || !arg?.value)) {
+export function validateOutputTools(
+    outputTools: ITool[],
+    inputToolMap: Map<string, IToolDefinition>,
+    context: string,
+    errors: string[]
+) {
+    outputTools.forEach((tool, index) => {
+        if (!tool?.name) return;
+
+        const toolPosition = `tool${index + 1}`;
+        const toolDef = inputToolMap.get(tool.name);
+
+        if (!toolDef) {
+            errors.push(`${context}.${toolPosition}: Tool '${tool.name}' not defined in input`);
+            return;
+        }
+
+        const outputArgs = [tool.arg1, tool.arg2, tool.arg3, tool.arg4, tool.arg5]
+            .filter(arg => arg?.key) as IToolArgument[];
+        const definedArgs = [toolDef.arg1, toolDef.arg2, toolDef.arg3, toolDef.arg4, toolDef.arg5]
+            .filter(arg => arg?.name) as IToolArgumentMetadata[];
+
+        const outputArgMap = new Map(outputArgs.map(arg => [arg.key, arg]));
+        const definedArgMap = new Map(definedArgs.map(arg => [arg.name, arg]));
+
+        // Check for duplicate keys in output
+        if (outputArgs.length !== new Set(outputArgs.map(arg => arg.key)).size) {
+            const duplicates = findDuplicates(outputArgs.map(arg => arg.key));
+            duplicates.forEach(key => {
+                errors.push(`${context}.${toolPosition}: Duplicate argument key '${key}'`);
+            });
+        }
+
+        // Validate all defined arguments against output
+        definedArgs.forEach((defArg) => {
+            const outputArg = outputArgMap.get(defArg.name);
+
+            if (defArg.required && !outputArg) {
+                errors.push(
+                    `${context}.${toolPosition}: Required argument '${defArg.name}' is missing`
+                );
+                return;
+            }
+
+            if (defArg.required && !outputArg?.value) {
+                errors.push(
+                    `${context}.${toolPosition}: Required argument '${defArg.name}' is empty`
+                );
+                return;
+            }
+
+            if (!outputArg) return;
+
+            if (outputArg.key !== defArg.name) {
+                errors.push(
+                    `${context}.${toolPosition}: Argument key '${outputArg.key}' doesn't match definition '${defArg.name}'`
+                );
+            }
+
+            validateArgumentValue(defArg, outputArg, context, toolPosition, errors);
+        });
+
+        // Check for undefined arguments in output
+        outputArgMap.forEach((arg, key) => {
+            if (!definedArgMap.has(key)) {
+                errors.push(
+                    `${context}.${toolPosition}: Argument '${key}' not defined in tool '${tool.name}'`
+                );
+            }
+        });
+    });
+}
+
+function validateArgumentValue(
+    def: IToolArgumentMetadata,
+    arg: IToolArgument,
+    context: string,
+    toolPosition: string,
+    errors: string[]
+) {
+    if (def.enum?.length && !def.enum.includes(arg.value)) {
         errors.push(
-          `${context}.${toolPosition}.${argKey}: Required argument '${argDef.name}' is missing`
+            `${context}.${toolPosition}.${arg.key}: Value '${arg.value
+            }' not in [${def.enum.join(", ")}]`
         );
-        continue;
-      }
-
-      if (!arg?.key) continue;
-
-      if (arg.key !== argDef.name) {
-        errors.push(
-          `${context}.${toolPosition}.${argKey}: Argument name '${arg.key}' doesn't match definition '${argDef.name}'`
-        );
-        continue;
-      }
-
-      if (argDef.enum?.length && !argDef.enum.includes(arg.value)) {
-        errors.push(
-          `${context}.${toolPosition}.${argKey}: Value '${
-            arg.value
-          }' is not in allowed values [${argDef.enum.join(", ")}]`
-        );
-      }
-
-      if (argDef.type === "number" && isNaN(Number(arg.value))) {
-        errors.push(
-          `${context}.${toolPosition}.${argKey}: Value '${arg.value}' is not a valid number`
-        );
-      } else if (
-        argDef.type === "boolean" &&
-        !["true", "false"].includes(arg.value.toLowerCase())
-      ) {
-        errors.push(
-          `${context}.${toolPosition}.${argKey}: Value '${arg.value}' is not a valid boolean`
-        );
-      }
     }
-  });
+
+    if (def.type === "number" && isNaN(Number(arg.value))) {
+        errors.push(
+            `${context}.${toolPosition}.${arg.key}: '${arg.value}' is not a number`
+        );
+    } else if (
+        def.type === "boolean" &&
+        !["true", "false"].includes(arg.value.toLowerCase())
+    ) {
+        errors.push(
+            `${context}.${toolPosition}.${arg.key}: '${arg.value}' is not a boolean`
+        );
+    }
+}
+
+function findDuplicates(arr: string[]): string[] {
+    const seen = new Set<string>();
+    const duplicates = new Set<string>();
+
+    arr.forEach(item => {
+        if (seen.has(item)) duplicates.add(item);
+        seen.add(item);
+    });
+
+    return Array.from(duplicates);
 }

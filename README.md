@@ -1,6 +1,6 @@
 # Fine-Tune Dataset Constructor
 
-> A React-based tool for constructing fine-tuning datasets with list and grid forms, featuring the ability to download and upload data as JSONL files. This project leverages the `react-declarative` library to create dynamic, interactive forms for defining user inputs, preferred outputs, and non-preferred outputs, along with associated tools and their parameters.
+> A React-based tool for constructing fine-tuning datasets with list and grid forms, featuring the ability to download and upload data as JSONL files compatible with OpenAI's fine-tuning API. This project leverages the `react-declarative` library to create dynamic, interactive forms for defining user inputs, preferred outputs, non-preferred outputs, and chat history, complete with tool definitions and calls.
 
 ![screenshot](./screenshot.png)
 
@@ -10,10 +10,15 @@
 - **Input Definition**: Specify user input messages with configurable tools and parameters.
 - **Output Configuration**: Define preferred and non-preferred outputs with content and associated tools.
 - **Tool Management**: Add up to five tools per input/output with customizable arguments (name, type, description, enum, required status).
+- ***Tool Name Autocomplete***: When selecting tools, the UI provides **autocomplete for tool names**, pulling from defined input tools to streamline selection.
+- ***Tool Enum Autocomplete***: For arguments with enum values, the form offers **autocomplete for predefined options**, enhancing accuracy and speed.
+- **History with Tools**: Include multi-turn conversational context with tool calls in history messages (currently supporting `tool1` per message).
 - **Data Persistence**: Save changes to local storage and retrieve them by ID.
-- **JSONL Support**: Download datasets as JSONL files and upload existing JSONL files for editing (requires additional implementation in storage config).
+- **JSONL Support**: Import/export datasets as JSONL files with automatic generation of unique `tool_call_id`s per OpenAI spec.
 - **Material-UI Integration**: Styled with Material-UI components for a modern, responsive UI.
-- **Breadcrumbs Navigation**: Easy navigation with save and back actions.
+- **Breadcrumbs Navigation**: Easy navigation with save, back, and draft actions.
+- **Validation**: Robust checks for tool calls, message order, and history tool consistency.
+- **Performance Optimized**: Uses Maps for O(1) lookups in validation and UI callbacks.
 
 ## Prerequisites
 
@@ -39,26 +44,7 @@
    yarn install
    ```
 
-3. **Set Up Configuration**:
-   - Ensure `history` and `storage` modules are properly configured in `src/config/`.
-   - Example `storage.ts`:
-     ```typescript
-     export interface IStorageItem {
-       id: string;
-       input: any;
-       preferred_output: any;
-       non_preferred_output: any;
-     }
-
-     const storage = {
-       getValue: (): IStorageItem[] => JSON.parse(localStorage.getItem("dataset") || "[]"),
-       setValue: (value: IStorageItem[]) => localStorage.setItem("dataset", JSON.stringify(value)),
-     };
-
-     export default storage;
-     ```
-
-4. **Run the Application**:
+3. **Run the Application**:
    ```bash
    npm start
    ```
@@ -71,34 +57,39 @@
 ## Usage
 
 1. **Access a Dataset Entry**:
-   - Navigate to a specific entry by passing an `id` prop to the `OneView` component (e.g., `/edit/<id>`).
-   - If no entry exists, a new one can be created.
+   - Create a new entry if no ID exists.
+   - Navigate to an entry using datagrid
 
 2. **Edit Fields**:
-   - **User Input**: Enter the message content and define up to five tools with their parameters.
-   - **Preferred Output**: Specify the preferred response content and associated tools.
-   - **Non-Preferred Output**: Define an alternative response for comparison.
+   - **Chat History**: Add up to five messages with roles (user, assistant, system, tool) and content. Assistant messages can include a tool call (tool1).
+   - **User Input**: Enter message content and define up to five tools with parameters.
+   - **Preferred Output**: Specify response content and up to five tool calls with **autocomplete for tool names and enum values**.
+   - **Non-Preferred Output**: Define an alternative response.
 
 3. **Save Changes**:
-   - Click the "Save" button in the breadcrumbs to persist changes to local storage.
-   - Use the "Back" link to save and return to the main page.
+   - Click "Save" in the breadcrumbs to persist to local storage, or "Save as Draft" to store temporarily.
+   - Use "Back" to return to the main page, with a confirmation if unsaved changes exist.
 
 4. **Export as JSONL**:
-   - (To be implemented) Add a button or action to export the dataset as a `.jsonl` file.
-   - Example output:
-     ```
-     {"id": "1", "input": {"role": "user", "content": "Hello"}, "preferred_output": {"role": "assistant", "content": "Hi there"}, "non_preferred_output": {"role": "assistant", "content": "Goodbye"}}
-     ```
+   - Press three dots on a gridview form and use `Export to jsonl`
 
 5. **Import JSONL**:
-   - (To be implemented) Add functionality to upload and parse a `.jsonl` file into the form.
+   - Press three dots on a gridview form and use `Import from jsonl`
+
+6. **Fine-Tune with OpenAI**:
+   - Export your dataset and upload it:
+     ```bash
+     openai api fine_tunes.create -t "path/to/your_dataset.jsonl" -m "base_model_name"
+     ```
 
 ## Project Structure
 
-- `src/OneView.tsx`: Main component containing the form logic and UI.
-- `src/config/history.ts`: Routing configuration (e.g., using `history` package).
-- `src/config/storage.ts`: Storage logic for persisting dataset entries.
-- `fields`: Array of `TypedField` objects defining the form structure.
+- `src/OneView.tsx`: Main component with form logic and UI.
+- `src/config/history.ts`: Routing configuration.
+- `src/config/storage.ts`: Storage logic for dataset persistence.
+- `src/config/draft.ts`: Draft state management.
+- `src/validation/`: Validation functions (`validateToolCalls`, `validateMessageOrder`, `validateMessageTools`).
+- `fields`: `TypedField` array defining the form structure.
 
 ## Dependencies
 
@@ -107,25 +98,34 @@
 - `lodash-es`: Utility functions (e.g., `get` for safe property access).
 - `react-declarative`: Declarative form-building library.
 
+## Data Structure
+
+- **`IStorageItem`**: Fine-tuning example with `input`, `preferred_output`, `non_preferred_output`, and `history`.
+- **`IToolDefinition`**: Tool spec with name, description, and up to five arguments.
+- **`ITool`**: Tool call with name and up to five key-value arguments.
+- **`IHistoryMessage`**: History message with role, content, and one tool call (tool1).
+
+## Technical Highlights
+
+- **Tool History**: Supports tool calls in history, exported with unique `tool_call_id`s.
+- **Tool Name Autocomplete**: In `createToolOutput`, the `itemList` for tool names dynamically lists available tools from input definitions, enabling quick selection with autocomplete.
+- **Tool Enum Autocomplete**: In `createToolOutputArgument`, enum-based arguments provide a dropdown with autocomplete, sourced from tool definitions, improving data entry efficiency.
+
 ## Extending the Project
 
-- **JSONL Export/Import**: Add buttons to `Breadcrumbs2` for downloading and uploading `.jsonl` files. Implement file handling in `OneView`.
-- **Validation**: Add form validation to ensure required fields are filled.
-- **Backend Integration**: Replace local storage with an API for persistent data storage.
-- **Styling**: Customize the Material-UI theme for a unique look.
+- **Full JSONL UI**: Add export/import buttons to `<Breadcrumbs2 />` or `<One />` components.
+- **Enhanced Validation**: Expand validation rules.
+- **Backend**: Replace local storage with an API.
+- **Multi-Tool History**: Extend `IHistoryMessage` to support multiple tools.
 
 ## Contributing
 
 1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/<feature-name>`).
-3. Commit your changes (`git commit -m "Add <feature-name>"`).
-4. Push to the branch (`git push origin feature/<feature-name>`).
+2. Create a branch (`git checkout -b feature/<feature-name>`).
+3. Commit changes (`git commit -m "Add <feature-name>"`).
+4. Push (`git push origin feature/<feature-name>`).
 5. Open a pull request.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-This `README.md` provides a clear overview of the project, its functionality, and how to get started. You can customize the repository URL, add a license file, and expand sections like "Extending the Project" based on future development. Let me know if you'd like further refinements!
+MIT License - see [LICENSE](LICENSE) for details.
