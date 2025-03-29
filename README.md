@@ -1,8 +1,10 @@
 # Fine-Tune Dataset Constructor
 
-> A React-based tool for constructing fine-tuning datasets with list and grid forms, featuring the ability to download and upload data as JSONL files compatible with OpenAI's fine-tuning API. This project leverages the `react-declarative` library to create dynamic, interactive forms for defining user inputs, preferred outputs, non-preferred outputs, and chat history, complete with tool definitions and calls.
+> This tool is [published to GitHub pages by this link](https://agent-tune.github.io)
 
 ![screencast](./screencast.gif)
+
+A React-based tool for constructing fine-tuning datasets with list and grid forms, featuring the ability to download and upload data as JSONL files compatible with OpenAI's fine-tuning API. This project leverages the `react-declarative` library to create dynamic, interactive forms for defining user inputs, preferred outputs, non-preferred outputs, and chat history, complete with tool definitions and calls.
 
 ## Features
 
