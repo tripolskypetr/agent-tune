@@ -37,45 +37,45 @@ function convertFromFinetune(fileContent: string): IStorageItem[] {
 
     const emptyTool: ITool = {
       name: "",
-      arg1: { key: "arg1", value: "" },
-      arg2: { key: "arg2", value: "" },
-      arg3: { key: "arg3", value: "" },
-      arg4: { key: "arg4", value: "" },
-      arg5: { key: "arg5", value: "" },
+      arg1: { key: "", value: "" },
+      arg2: { key: "", value: "" },
+      arg3: { key: "", value: "" },
+      arg4: { key: "", value: "" },
+      arg5: { key: "", value: "" },
     };
     const emptyToolDef: IToolDefinition = {
       name: "",
       description: "",
       arg1: {
-        name: "arg1",
+        name: "",
         type: "",
         description: "",
         enum: null,
         required: false,
       },
       arg2: {
-        name: "arg2",
+        name: "",
         type: "",
         description: "",
         enum: null,
         required: false,
       },
       arg3: {
-        name: "arg3",
+        name: "",
         type: "",
         description: "",
         enum: null,
         required: false,
       },
       arg4: {
-        name: "arg4",
+        name: "",
         type: "",
         description: "",
         enum: null,
         required: false,
       },
       arg5: {
-        name: "arg5",
+        name: "",
         type: "",
         description: "",
         enum: null,
@@ -146,33 +146,35 @@ function convertFromFinetune(fileContent: string): IStorageItem[] {
 
 function convertToolToDefinition(func: any, index: number): IToolDefinition {
   const params = func.parameters?.properties || {};
+  const keys = Object.keys(params);
+  const values = Object.values(params);
   return {
     name: func.name || "",
     description: func.description || "",
     arg1: convertParamToMetadata(
-      params.arg1,
-      "arg1",
-      func.parameters?.required?.includes("arg1")
+      values[0],
+      keys[0],
+      func.parameters?.required?.includes(keys[0])
     ),
     arg2: convertParamToMetadata(
-      params.arg2,
-      "arg2",
-      func.parameters?.required?.includes("arg2")
+      values[1],
+      keys[1],
+      func.parameters?.required?.includes(keys[1])
     ),
     arg3: convertParamToMetadata(
-      params.arg3,
-      "arg3",
-      func.parameters?.required?.includes("arg3")
+      values[2],
+      keys[2],
+      func.parameters?.required?.includes(keys[2])
     ),
     arg4: convertParamToMetadata(
-      params.arg4,
-      "arg4",
-      func.parameters?.required?.includes("arg4")
+      values[3],
+      keys[3],
+      func.parameters?.required?.includes(keys[3])
     ),
     arg5: convertParamToMetadata(
-      params.arg5,
-      "arg5",
-      func.parameters?.required?.includes("arg5")
+      values[4],
+      keys[4],
+      func.parameters?.required?.includes(keys[4])
     ),
   };
 }
@@ -183,7 +185,7 @@ function convertParamToMetadata(
   required: boolean = false
 ): IToolArgumentMetadata {
   return {
-    name: name,
+    name: name || "",
     type: param?.type || "",
     description: param?.description || "",
     enum: param?.enum || null,

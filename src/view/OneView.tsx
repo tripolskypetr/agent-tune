@@ -121,7 +121,6 @@ const createTool = (name: string): TypedField => ({
 
 const createToolOutput = (name: string): TypedField => ({
   type: FieldType.Group,
-  fieldBottomMargin: "5",
   fields: [
     {
       type: FieldType.Text,
@@ -132,7 +131,8 @@ const createToolOutput = (name: string): TypedField => ({
       placeholder: "Start to type to expand",
     },
     {
-      type: FieldType.Fragment,
+      type: FieldType.Outline,
+      fieldBottomMargin: "5",
       isVisible: (data) => {
         return get(data, `${name}.name`);
       },
