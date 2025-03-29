@@ -19,6 +19,7 @@ import history from "../config/history";
 import { useState } from "react";
 import storage, { IStorageItem } from "../config/storage";
 import { validateToolCalls } from "../validation/validateToolCalls";
+import { validateMessageOrder } from "../validation/validateMessageOrder";
 
 const createToolParameter = (name: string, index: number): TypedField => ({
   type: FieldType.Outline,
@@ -543,6 +544,16 @@ export const OneView = ({ id }: IOneViewProps) => {
       if (!valid) {
         pickAlert({
           title: "The invalid tool calls",
+          description: errors.map((text, idx) => `${idx + 1}) ${text}`).join("\n\n")
+        });
+        return;
+      }
+    }
+    {
+      const { errors, valid } = validateMessageOrder(data);
+      if (!valid) {
+        pickAlert({
+          title: "The invalid chat history order",
           description: errors.map((text, idx) => `${idx + 1}) ${text}`).join("\n\n")
         });
         return;
