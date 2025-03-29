@@ -57,7 +57,7 @@
 ## Usage
 
 1. **Access a Dataset Entry**:
-   - Create a new entry if no ID exists.
+   - Create a new entry by using `+ Create` button on a datagrid page
    - Navigate to an entry using datagrid
 
 2. **Edit Fields**:
