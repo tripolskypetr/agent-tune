@@ -19,7 +19,6 @@ import {
   sleep,
 } from "react-declarative";
 import history from "../config/history";
-import { useState } from "react";
 import storage, { IStorageItem } from "../config/storage";
 import { validateToolCalls } from "../validation/validateToolCalls";
 import { validateMessageOrder } from "../validation/validateMessageOrder";
@@ -28,9 +27,7 @@ import { validateMessageTools } from "../validation/validateMessageTools";
 
 const createToolParameter = (name: string, index: number): TypedField => ({
   type: FieldType.Outline,
-  isVisible: (data) => {
-    return get(data, `${name}.name`);
-  },
+  isVisible: (data) => !!get(data, `${name}.name`),
   fieldBottomMargin: "2",
   fields: [
     {
@@ -42,15 +39,11 @@ const createToolParameter = (name: string, index: number): TypedField => ({
     },
     {
       type: FieldType.Fragment,
-      isVisible: (data) => {
-        return get(data, `${name}.arg${index}.name`);
-      },
+      isVisible: (data) => !!get(data, `${name}.arg${index}.name`),
       fields: [
         {
           type: FieldType.Text,
-          isVisible: (data) => {
-            return get(data, `${name}.arg${index}.name`);
-          },
+          isVisible: (data) => !!get(data, `${name}.arg${index}.name`),
           readonly: true,
           name: `${name}.arg${index}.type`,
           title: "Type",
@@ -58,27 +51,21 @@ const createToolParameter = (name: string, index: number): TypedField => ({
         },
         {
           type: FieldType.Text,
-          isVisible: (data) => {
-            return get(data, `${name}.arg${index}.name`);
-          },
+          isVisible: (data) => !!get(data, `${name}.arg${index}.name`),
           inputRows: 3,
           name: `${name}.arg${index}.description`,
           title: "Description",
         },
         {
           type: FieldType.Items,
-          isVisible: (data) => {
-            return get(data, `${name}.arg${index}.name`);
-          },
+          isVisible: (data) => !!get(data, `${name}.arg${index}.name`),
           name: `${name}.arg${index}.enum`,
           title: "Enum",
           freeSolo: true,
         },
         {
           type: FieldType.Checkbox,
-          isVisible: (data) => {
-            return get(data, `${name}.arg${index}.name`);
-          },
+          isVisible: (data) => !!get(data, `${name}.arg${index}.name`),
           name: `${name}.arg${index}.required`,
           title: "Required",
         },
@@ -101,9 +88,7 @@ const createTool = (name: string): TypedField => ({
     {
       type: FieldType.Text,
       outlined: true,
-      isVisible: (data) => {
-        return get(data, `${name}.name`);
-      },
+      isVisible: (data) => !!get(data, `${name}.name`),
       inputRows: 5,
       name: `${name}.description`,
       title: "Tool description",
@@ -111,9 +96,7 @@ const createTool = (name: string): TypedField => ({
     {
       type: FieldType.Group,
       fieldBottomMargin: "4",
-      isVisible: (data) => {
-        return get(data, `${name}.name`);
-      },
+      isVisible: (data) => !!get(data, `${name}.name`),
       fields: [
         createToolParameter(name, 1),
         createToolParameter(name, 2),
@@ -125,35 +108,31 @@ const createTool = (name: string): TypedField => ({
   ],
 });
 
-const createToolOutputArgument = (name: string, index: number): TypedField[] => [
+const createToolOutputArgument = (
+  name: string,
+  index: number
+): TypedField[] => [
   {
     type: FieldType.Combo,
     itemList: (data: IStorageItem) => {
       const toolName = get(data, `${name}.name`);
-      if (!toolName) {
-        return [];
-      }
-      const tool = [
-        data.input.tool1,
-        data.input.tool2,
-        data.input.tool3,
-        data.input.tool4,
-        data.input.tool5,
-      ].find(({ name }) => name === toolName);
-      if (!tool) {
-        return [];
-      }
-      return [
-        tool.arg1.name,
-        tool.arg2.name,
-        tool.arg3.name,
-        tool.arg4.name,
-        tool.arg5.name,
-      ].filter(Boolean);
+      if (!toolName) return [];
+      const toolsMap = new Map(
+        [
+          [data.input.tool1.name, data.input.tool1] as const,
+          [data.input.tool2.name, data.input.tool2] as const,
+          [data.input.tool3.name, data.input.tool3] as const,
+          [data.input.tool4.name, data.input.tool4] as const,
+          [data.input.tool5.name, data.input.tool5] as const,
+        ].filter(([name]) => name)
+      );
+      const tool = toolsMap.get(toolName);
+      if (!tool) return [];
+      return Object.values(tool)
+        .map((arg) => arg?.name)
+        .filter(Boolean) as string[];
     },
-    isVisible: (data) => {
-      return get(data, `${name}.name`);
-    },
+    isVisible: (data) => !!get(data, `${name}.name`),
     columns: "4",
     name: `${name}.arg${index}.key`,
     title: `Argument ${index} Key`,
@@ -163,29 +142,23 @@ const createToolOutputArgument = (name: string, index: number): TypedField[] => 
   {
     type: FieldType.Text,
     isVisible: (data: IStorageItem) => {
-      const toolName = `${name}.name`;
-      const argumentName = `${name}.arg${index}.key`;
-      if (!get(data, toolName)) {
-        return false;
-      }
-      if (!get(data, argumentName)) {
-        return false;
-      }
-      const tool = [
-        data.input.tool1,
-        data.input.tool2,
-        data.input.tool3,
-        data.input.tool4,
-        data.input.tool5,
-      ].find(({ name }) => name === get(data, toolName));
-      const argument =  [
-        tool.arg1,
-        tool.arg2,
-        tool.arg3,
-        tool.arg4,
-        tool.arg5,
-      ].find(({ name }) => name === get(data, argumentName));
-      return !argument?.enum;
+      const toolName = get(data, `${name}.name`);
+      const argKey = get(data, `${name}.arg${index}.key`);
+      if (!toolName || !argKey) return false;
+      const toolsMap = new Map(
+        [
+          [data.input.tool1.name, data.input.tool1] as const,
+          [data.input.tool2.name, data.input.tool2] as const,
+          [data.input.tool3.name, data.input.tool3] as const,
+          [data.input.tool4.name, data.input.tool4] as const,
+          [data.input.tool5.name, data.input.tool5] as const,
+        ].filter(([name]) => name)
+      );
+      const tool = toolsMap.get(toolName);
+      return (
+        tool &&
+        !Object.values(tool).some((arg) => arg?.name === argKey && arg.enum)
+      );
     },
     columns: "8",
     name: `${name}.arg${index}.value`,
@@ -196,55 +169,47 @@ const createToolOutputArgument = (name: string, index: number): TypedField[] => 
     type: FieldType.Combo,
     freeSolo: true,
     itemList: (data: IStorageItem) => {
-      const toolName = `${name}.name`;
-      const argumentName = `${name}.arg${index}.key`;
-      const tool = [
-        data.input.tool1,
-        data.input.tool2,
-        data.input.tool3,
-        data.input.tool4,
-        data.input.tool5,
-      ].find(({ name }) => name === get(data, toolName));
-      const argument =  [
-        tool.arg1,
-        tool.arg2,
-        tool.arg3,
-        tool.arg4,
-        tool.arg5,
-      ].find(({ name }) => name === get(data, argumentName));
-      return argument?.enum || [];
+      const toolName = get(data, `${name}.name`);
+      const argKey = get(data, `${name}.arg${index}.key`);
+      if (!toolName || !argKey) return [];
+      const toolsMap = new Map(
+        [
+          [data.input.tool1.name, data.input.tool1] as const,
+          [data.input.tool2.name, data.input.tool2] as const,
+          [data.input.tool3.name, data.input.tool3] as const,
+          [data.input.tool4.name, data.input.tool4] as const,
+          [data.input.tool5.name, data.input.tool5] as const,
+        ].filter(([name]) => name)
+      );
+      const tool = toolsMap.get(toolName);
+      if (!tool) return [];
+      const arg = Object.values(tool).find((arg) => arg?.name === argKey);
+      return arg?.enum || [];
     },
     isVisible: (data: IStorageItem) => {
-      const toolName = `${name}.name`;
-      const argumentName = `${name}.arg${index}.key`;
-      if (!get(data, toolName)) {
-        return false;
-      }
-      if (!get(data, argumentName)) {
-        return false;
-      }
-      const tool = [
-        data.input.tool1,
-        data.input.tool2,
-        data.input.tool3,
-        data.input.tool4,
-        data.input.tool5,
-      ].find(({ name }) => name === get(data, toolName));
-      const argument =  [
-        tool.arg1,
-        tool.arg2,
-        tool.arg3,
-        tool.arg4,
-        tool.arg5,
-      ].find(({ name }) => name === get(data, argumentName));
-      return !!argument?.enum;
+      const toolName = get(data, `${name}.name`);
+      const argKey = get(data, `${name}.arg${index}.key`);
+      if (!toolName || !argKey) return false;
+      const toolsMap = new Map(
+        [
+          [data.input.tool1.name, data.input.tool1] as const,
+          [data.input.tool2.name, data.input.tool2] as const,
+          [data.input.tool3.name, data.input.tool3] as const,
+          [data.input.tool4.name, data.input.tool4] as const,
+          [data.input.tool5.name, data.input.tool5] as const,
+        ].filter(([name]) => name)
+      );
+      const tool = toolsMap.get(toolName);
+      return (
+        tool && !!Object.values(tool).find((arg) => arg?.name === argKey)?.enum
+      );
     },
     columns: "8",
     name: `${name}.arg${index}.value`,
     title: "",
     placeholder: `Argument ${index} Value`,
   },
-]
+];
 
 const createToolOutput = (name: string, index: number): TypedField => ({
   type: FieldType.Group,
@@ -255,13 +220,13 @@ const createToolOutput = (name: string, index: number): TypedField => ({
       labelShrink: true,
       name: `${name}.name`,
       itemList: (data: IStorageItem) => {
-        return [
-          data.input.tool1.name,
-          data.input.tool2.name,
-          data.input.tool3.name,
-          data.input.tool4.name,
-          data.input.tool5.name,
-        ].filter(Boolean);
+        return Object.values({
+          tool1: data.input.tool1.name,
+          tool2: data.input.tool2.name,
+          tool3: data.input.tool3.name,
+          tool4: data.input.tool4.name,
+          tool5: data.input.tool5.name,
+        }).filter(Boolean) as string[];
       },
       title: `Tool name ${index}`,
       placeholder: "Start to type to expand",
@@ -269,9 +234,7 @@ const createToolOutput = (name: string, index: number): TypedField => ({
     {
       type: FieldType.Outline,
       fieldBottomMargin: "5",
-      isVisible: (data) => {
-        return get(data, `${name}.name`);
-      },
+      isVisible: (data) => !!get(data, `${name}.name`),
       fields: [
         {
           type: FieldType.Group,
@@ -316,9 +279,7 @@ const createMessage = (name: string, index: number): TypedField => ({
       fieldBottomMargin: "2",
       inputRows: 5,
       name: `${name}.message${index}.content`,
-      isVisible: (data) => {
-        return get(data, `${name}.message${index}.role`) === "user";
-      },
+      isVisible: (data) => get(data, `${name}.message${index}.role`) === "user",
       title: "",
       placeholder: `Message ${index} content (user)`,
     },
@@ -327,17 +288,15 @@ const createMessage = (name: string, index: number): TypedField => ({
       fieldBottomMargin: "4",
       inputRows: 5,
       name: `${name}.message${index}.content`,
-      isVisible: (data) => {
-        return get(data, `${name}.message${index}.role`) === "assistant";
-      },
+      isVisible: (data) =>
+        get(data, `${name}.message${index}.role`) === "assistant",
       title: "",
       placeholder: `Message ${index} content (assistant)`,
     },
     {
       type: FieldType.Fragment,
-      isVisible: (data) => {
-        return get(data, `${name}.message${index}.role`) === "assistant";
-      },
+      isVisible: (data) =>
+        get(data, `${name}.message${index}.role`) === "assistant",
       fields: [createToolOutput(`${name}.message${index}.tool1`, 1)],
     },
     {
@@ -345,9 +304,8 @@ const createMessage = (name: string, index: number): TypedField => ({
       fieldBottomMargin: "2",
       inputRows: 5,
       name: `${name}.message${index}.content`,
-      isVisible: (data) => {
-        return get(data, `${name}.message${index}.role`) === "system";
-      },
+      isVisible: (data) =>
+        get(data, `${name}.message${index}.role`) === "system",
       title: "",
       placeholder: `Message ${index} content (system)`,
     },
@@ -356,9 +314,7 @@ const createMessage = (name: string, index: number): TypedField => ({
       fieldBottomMargin: "2",
       inputRows: 5,
       name: `${name}.message${index}.content`,
-      isVisible: (data) => {
-        return get(data, `${name}.message${index}.role`) === "tool";
-      },
+      isVisible: (data) => get(data, `${name}.message${index}.role`) === "tool",
       title: "",
       placeholder: `Message ${index} content (tool)`,
     },
@@ -677,7 +633,7 @@ export const OneView = ({ id }: IOneViewProps) => {
     }
   };
 
-  const handleAction = (action: string) => {
+  const handleAction = async (action: string) => {
     if (action === "draft-action") {
       handleDraft();
     }
@@ -685,7 +641,7 @@ export const OneView = ({ id }: IOneViewProps) => {
       handleBack();
     }
     if (action === "save-action") {
-      sleep(2_000).then(handleSave);
+      await sleep(2_000).then(handleSave);
     }
   };
 
