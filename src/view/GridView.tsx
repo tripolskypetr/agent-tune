@@ -13,18 +13,36 @@ import {
   getInitialData,
   IBreadcrumbs2Action,
   useConfirm,
+  useOnce,
+  not,
 } from "react-declarative";
 import history from "../config/history";
-import { Container, Paper } from "@mui/material";
+import { Checkbox, Container, Paper } from "@mui/material";
 import { downloadFinetune } from "../utils/downloadFinetune";
 import { convertFromFinetune } from "../utils/convertFromFinetune";
 import { fields } from "./OneView";
 import { downloadStorage } from "../utils/downloadStorage";
+import draft from "../config/draft";
+
+const DRAFT_ID = draft.getValue()?.id ?? null;
 
 const columns: IGridColumn[] = [
   {
+    label: "Draft",
+    field: "draft",
+    align: "left",
+    width: () => 85,
+    format: (data: IStorageItem) => (
+      <Checkbox
+        checked={data.id === DRAFT_ID}
+      />
+    ),
+  },
+  {
     label: "User input",
     field: "input_content",
+    width: (fullWidth) => (fullWidth - 85) * 0.33,
+    minWidth: 175,
     format: (data: IStorageItem) => {
       return data?.input?.content || "Empty";
     },
@@ -32,6 +50,8 @@ const columns: IGridColumn[] = [
   {
     label: "Prefered output",
     field: "prefered_output",
+    width: (fullWidth) => (fullWidth - 85) * 0.33,
+    minWidth: 175,
     format: (data: IStorageItem) => {
       return data?.preferred_output?.content || "Empty";
     },
@@ -39,6 +59,8 @@ const columns: IGridColumn[] = [
   {
     label: "Non-Prefered output",
     field: "non_prefered_output",
+    width: (fullWidth) => (fullWidth - 85) * 0.33,
+    minWidth: 175,
     format: (data: IStorageItem) => {
       return data?.non_preferred_output?.content || "Empty";
     },
@@ -127,6 +149,12 @@ const actions: IBreadcrumbs2Action[] = [
 
 export const GridView = () => {
 
+  const pickDraft = useConfirm({
+    title: "The unsaved draft found",
+    msg: "Looks like there is unsaved draft. Would you like to open it?",
+    canCancel: true,
+  });
+
   const pickConfirm = useConfirm({
     title: "Are you sure?",
     msg: "This action will remove everything from the card. Continue?",
@@ -136,6 +164,25 @@ export const GridView = () => {
   const [data, { loading, execute }] = useAsyncValue(() => {
     const items = storage.getValue();
     return items ? items : [];
+  });
+
+  useOnce(async () => {
+    const data = draft.getValue();
+    if (!data) {
+      return;
+    }
+    if (await not(pickDraft().toPromise())) {
+      return;
+    }
+    if (storage.getValue().some((row) => row.id === data.id)) {
+      history.push(`/${data.id}`);
+    } else {
+      storage.setValue([
+        ...(storage.getValue() || []),
+        data,
+      ]);
+      history.push(`/${data.id}`);
+    }
   });
 
   const handleRowAction = (action: string, row: IStorageItem) => {

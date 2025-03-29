@@ -1,4 +1,4 @@
-import { Save } from "@mui/icons-material";
+import { Save, SaveAs } from "@mui/icons-material";
 import { Container } from "@mui/material";
 import { get, set } from "lodash-es";
 import {
@@ -14,12 +14,14 @@ import {
   useConfirm,
   useSnack,
   getInitialData,
+  IBreadcrumbs2Action,
 } from "react-declarative";
 import history from "../config/history";
 import { useState } from "react";
 import storage, { IStorageItem } from "../config/storage";
 import { validateToolCalls } from "../validation/validateToolCalls";
 import { validateMessageOrder } from "../validation/validateMessageOrder";
+import draft from "../config/draft";
 
 const createToolParameter = (name: string, index: number): TypedField => ({
   type: FieldType.Outline,
@@ -493,6 +495,14 @@ const options: IBreadcrumbs2Option[] = [
   },
 ];
 
+const actions: IBreadcrumbs2Action[] = [
+  {
+    action: "draft-action",
+    icon: SaveAs,
+    label: "Save as draft",
+  },
+];
+
 interface IOneViewProps {
   id: string;
 }
@@ -531,6 +541,18 @@ export const OneView = ({ id }: IOneViewProps) => {
   const pickAlert = useAlert({
     title: "Validation error",
     large: true,
+  });
+
+  const handleDraft = useActualCallback(() => {
+    if (!data) {
+      notify("There are no changes to make a draft");
+      return;
+    }
+    draft.setValue({
+      ...data,
+      id,
+    });
+    notify("Changes saved as draft");
   });
 
   const handleSave = useActualCallback(async () => {
@@ -583,6 +605,9 @@ export const OneView = ({ id }: IOneViewProps) => {
   };
 
   const handleAction = (action: string) => {
+    if (action === "draft-action") {
+      handleDraft();
+    }
     if (action === "back-action") {
       handleBack();
     }
@@ -593,9 +618,15 @@ export const OneView = ({ id }: IOneViewProps) => {
 
   return (
     <Container>
-      <Breadcrumbs2 items={options} onAction={handleAction} />
+      <Breadcrumbs2 items={options} actions={actions} onAction={handleAction} />
       <One
-        handler={() => storage.getValue().find((row) => row.id === id) ?? null}
+        handler={() => {
+          const data = draft.getValue();
+          if (data?.id === id) {
+            return data;
+          }
+          return storage.getValue().find((row) => row.id === id) ?? null
+        }}
         fields={fields}
         onChange={(value, initial) => {
           if (!initial) {
