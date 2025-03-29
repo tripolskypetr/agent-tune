@@ -123,7 +123,7 @@ const createTool = (name: string): TypedField => ({
   ],
 });
 
-const createToolOutput = (name: string): TypedField => ({
+const createToolOutput = (name: string, index: number): TypedField => ({
   type: FieldType.Group,
   fields: [
     {
@@ -140,7 +140,7 @@ const createToolOutput = (name: string): TypedField => ({
           data.input.tool5.name,
         ].filter(Boolean);
       },
-      title: "Tool name",
+      title: `Tool name ${index}`,
       placeholder: "Start to type to expand",
     },
     {
@@ -443,7 +443,7 @@ const createMessage = (name: string, index: number): TypedField => ({
       isVisible: (data) => {
         return get(data, `${name}.message${index}.role`) === "assistant";
       },
-      fields: [createToolOutput(`${name}.message${index}.tool1`)],
+      fields: [createToolOutput(`${name}.message${index}.tool1`, 1)],
     },
     {
       type: FieldType.Text,
@@ -582,11 +582,11 @@ export const fields: TypedField[] = [
     title: "Preferred Output Tools",
     description: "List of tools in prefered output",
     fields: [
-      createToolOutput("preferred_output.tool1"),
-      createToolOutput("preferred_output.tool2"),
-      createToolOutput("preferred_output.tool3"),
-      createToolOutput("preferred_output.tool4"),
-      createToolOutput("preferred_output.tool5"),
+      createToolOutput("preferred_output.tool1", 1),
+      createToolOutput("preferred_output.tool2", 2),
+      createToolOutput("preferred_output.tool3", 3),
+      createToolOutput("preferred_output.tool4", 4),
+      createToolOutput("preferred_output.tool5", 5),
     ],
   },
   {
@@ -623,11 +623,11 @@ export const fields: TypedField[] = [
     title: "Non-Preferred Output Tools",
     description: "List of tools in non-prefered output",
     fields: [
-      createToolOutput("non_preferred_output.tool1"),
-      createToolOutput("non_preferred_output.tool2"),
-      createToolOutput("non_preferred_output.tool3"),
-      createToolOutput("non_preferred_output.tool4"),
-      createToolOutput("non_preferred_output.tool5"),
+      createToolOutput("non_preferred_output.tool1", 1),
+      createToolOutput("non_preferred_output.tool2", 2),
+      createToolOutput("non_preferred_output.tool3", 3),
+      createToolOutput("non_preferred_output.tool4", 4),
+      createToolOutput("non_preferred_output.tool5", 5),
     ],
   },
 ];

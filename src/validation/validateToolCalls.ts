@@ -105,12 +105,19 @@ export function validateOutputTools(
         }
 
         // Validate all defined arguments against output
-        definedArgs.forEach((defArg, argIndex) => {
+        definedArgs.forEach((defArg) => {
             const outputArg = outputArgMap.get(defArg.name);
 
             if (defArg.required && !outputArg) {
                 errors.push(
                     `${context}.${toolPosition}: Required argument '${defArg.name}' is missing`
+                );
+                return;
+            }
+
+            if (defArg.required && !outputArg?.value) {
+                errors.push(
+                    `${context}.${toolPosition}: Required argument '${defArg.name}' is empty`
                 );
                 return;
             }
