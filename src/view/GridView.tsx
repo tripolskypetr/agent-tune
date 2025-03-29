@@ -1,4 +1,17 @@
-import { Add, CloudUpload, CopyAll, Delete, DeleteForever, Edit, FileOpen, MoveToInbox, Outbox, Publish, Refresh, Save } from "@mui/icons-material";
+import {
+  Add,
+  CloudUpload,
+  CopyAll,
+  Delete,
+  DeleteForever,
+  Edit,
+  FileOpen,
+  MoveToInbox,
+  Outbox,
+  Publish,
+  Refresh,
+  Save,
+} from "@mui/icons-material";
 import storage, { IStorageItem } from "../config/storage";
 import {
   Breadcrumbs2,
@@ -24,6 +37,8 @@ import { convertFromFinetune } from "../utils/convertFromFinetune";
 import { fields } from "./OneView";
 import { downloadStorage } from "../utils/downloadStorage";
 import draft from "../config/draft";
+import { downloadFinetuneSft } from "../utils/downloadFinetune.sft";
+import { convertFromFinetuneSft } from "../utils/convertFromFinetune.sft";
 
 const getDraftId = singleshot(() => draft.getValue()?.id ?? null);
 
@@ -34,9 +49,7 @@ const columns: IGridColumn[] = [
     align: "left",
     width: () => 85,
     format: (data: IStorageItem) => (
-      <Checkbox
-        checked={data.id === getDraftId()}
-      />
+      <Checkbox checked={data.id === getDraftId()} />
     ),
   },
   {
@@ -129,12 +142,25 @@ const actions: IBreadcrumbs2Action[] = [
     divider: true,
   },
   {
-    action: "export-action",
-    label: "Export to jsonl",
+    action: "export-action-sft",
+    label: "Export to jsonl (SFT)",
     icon: Outbox,
   },
   {
-    label: "Import from jsonl",
+    label: "Import from jsonl (SFT)",
+    icon: MoveToInbox,
+    action: "import-action-sft",
+  },
+  {
+    divider: true,
+  },
+  {
+    action: "export-action",
+    label: "Export to jsonl (DPO)",
+    icon: Outbox,
+  },
+  {
+    label: "Import from jsonl (DPO)",
     icon: MoveToInbox,
     action: "import-action",
   },
@@ -145,11 +171,10 @@ const actions: IBreadcrumbs2Action[] = [
     label: "Remove all",
     icon: DeleteForever,
     action: "remove-all-action",
-  }
+  },
 ];
 
 export const GridView = () => {
-
   const pickDraft = useConfirm({
     title: "The unsaved draft found",
     msg: "Looks like there is unsaved draft. Would you like to open it?",
@@ -179,10 +204,7 @@ export const GridView = () => {
     if (storage.getValue().some((row) => row.id === data.id)) {
       history.push(`/${data.id}`);
     } else {
-      storage.setValue([
-        ...(storage.getValue() || []),
-        data,
-      ]);
+      storage.setValue([...(storage.getValue() || []), data]);
       history.push(`/${data.id}`);
     }
   });
@@ -214,6 +236,17 @@ export const GridView = () => {
     execute();
   };
 
+  const handleImportSft = async () => {
+    const blob = await chooseFile("*.jsonl");
+    if (!blob) {
+      return;
+    }
+    const text = await blob.text();
+    const items = convertFromFinetuneSft(text);
+    storage.setValue(items);
+    execute();
+  };
+
   const handleOpen = async () => {
     const blob = await chooseFile("*.json");
     if (!blob) {
@@ -223,7 +256,7 @@ export const GridView = () => {
     const json = JSON.parse(text);
     storage.setValue(json);
     execute();
-  }
+  };
 
   const handleCreate = () => {
     const newItem: Partial<IStorageItem> = {
@@ -259,6 +292,12 @@ export const GridView = () => {
     }
     if (action === "export-action") {
       downloadFinetune(storage.getValue());
+    }
+    if (action === "import-action-sft") {
+      handleImportSft();
+    }
+    if (action === "export-action-sft") {
+      downloadFinetuneSft(storage.getValue());
     }
     if (action === "import-action") {
       handleImport();
