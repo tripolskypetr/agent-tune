@@ -6,8 +6,6 @@ export function validateMessageOrder(item: IStorageItem): {
   } {
     const errors: string[] = [];
   
-    // Existing tool validation logic...
-  
     // Validate chat history structure
     const historyMessages = [
       { message: item.history.message1, position: 'message1' },
@@ -18,7 +16,6 @@ export function validateMessageOrder(item: IStorageItem): {
     ];
   
     let foundNull = false;
-    let hasMessages = false;
     let allowSystemMessages = true;
   
     historyMessages.forEach(({ message, position }) => {
@@ -27,7 +24,6 @@ export function validateMessageOrder(item: IStorageItem): {
       if (role === null) {
         foundNull = true;
       } else {
-        hasMessages = true;
   
         // Check for gaps
         if (foundNull) {
@@ -45,10 +41,6 @@ export function validateMessageOrder(item: IStorageItem): {
         }
       }
     });
-  
-    if (!hasMessages) {
-      errors.push('history: Must contain at least one message');
-    }
   
     return {
       valid: errors.length === 0,
