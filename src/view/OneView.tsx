@@ -127,10 +127,20 @@ const createToolOutput = (name: string): TypedField => ({
   type: FieldType.Group,
   fields: [
     {
-      type: FieldType.Text,
+      type: FieldType.Combo,
+      freeSolo: true,
       outlined: true,
       labelShrink: true,
       name: `${name}.name`,
+      itemList: (data: IStorageItem) => {
+        return [
+          data.input.tool1.name,
+          data.input.tool2.name,
+          data.input.tool3.name,
+          data.input.tool4.name,
+          data.input.tool5.name,
+        ].filter(Boolean);
+      },
       title: "Tool name",
       placeholder: "Start to type to expand",
     },
