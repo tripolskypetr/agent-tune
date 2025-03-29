@@ -7,7 +7,7 @@ import {
   IHistoryMessage,
 } from "../config/storage";
 
-function convertFromFinetune(fileContent: string): IStorageItem[] {
+function convertFromFinetuneSft(fileContent: string): IStorageItem[] {
   const lines = fileContent.trim().split("\n");
   const storageItems: IStorageItem[] = [];
 
@@ -15,29 +15,24 @@ function convertFromFinetune(fileContent: string): IStorageItem[] {
     if (!line.trim()) continue;
 
     const parsed = JSON.parse(line);
-    const { input, preferred_output, non_preferred_output } = parsed;
+    const messages = parsed.messages;
 
-    if (!input?.messages || !preferred_output || !non_preferred_output)
-      continue;
+    if (!messages || messages.length < 2) continue;
 
-    // Separate history messages from input
-    const historyMessages = input.messages.slice(0, -1); // All except last one
-    const inputMessage = input.messages[input.messages.length - 1]; // Last message as input
+    // Separate history messages from input/output
+    const historyMessages = messages.slice(0, -2); // All except last two
+    const inputMessage = messages[messages.length - 2]; // Second to last
+    const outputMessage = messages[messages.length - 1]; // Last
 
-    if (!inputMessage) continue;
+    if (!inputMessage || !outputMessage) continue;
 
-    const inputTools = (input.tools || []).map((tool: any, index: number) =>
-      convertToolToDefinition(tool.function, index + 1)
+    const inputTools = (inputMessage.tools || []).map(
+      (tool: any, index: number) =>
+        convertToolToDefinition(tool.function, index + 1)
     );
 
-    const preferredOutput = preferred_output[0] || {};
-    const nonPreferredOutput = non_preferred_output[0] || {};
-
-    const preferredTools = (preferredOutput.tool_calls || []).map(
-      (toolCall: any) => convertToolCallToTool(toolCall)
-    );
-    const nonPreferredTools = (nonPreferredOutput.tool_calls || []).map(
-      (toolCall: any) => convertToolCallToTool(toolCall)
+    const outputTools = (outputMessage.tool_calls || []).map((toolCall: any) =>
+      convertToolCallToTool(toolCall)
     );
 
     const emptyTool: ITool = {
@@ -90,7 +85,7 @@ function convertFromFinetune(fileContent: string): IStorageItem[] {
     const emptyHistoryMessage: IHistoryMessage = {
       role: null,
       content: "",
-      tool1: emptyTool,
+      tool1: emptyTool, // Add tool1 to empty message structure
     };
 
     // Convert history messages with tool support
@@ -124,22 +119,22 @@ function convertFromFinetune(fileContent: string): IStorageItem[] {
         tool5: inputTools[4] || emptyToolDef,
       },
       preferred_output: {
-        role: preferredOutput.role || "assistant",
-        content: preferredOutput.content || "",
-        tool1: preferredTools[0] || emptyTool,
-        tool2: preferredTools[1] || emptyTool,
-        tool3: preferredTools[2] || emptyTool,
-        tool4: preferredTools[3] || emptyTool,
-        tool5: preferredTools[4] || emptyTool,
+        role: outputMessage.role,
+        content: outputMessage.content || "",
+        tool1: outputTools[0] || emptyTool,
+        tool2: outputTools[1] || emptyTool,
+        tool3: outputTools[2] || emptyTool,
+        tool4: outputTools[3] || emptyTool,
+        tool5: outputTools[4] || emptyTool,
       },
       non_preferred_output: {
-        role: nonPreferredOutput.role || "assistant",
-        content: nonPreferredOutput.content || "",
-        tool1: nonPreferredTools[0] || emptyTool,
-        tool2: nonPreferredTools[1] || emptyTool,
-        tool3: nonPreferredTools[2] || emptyTool,
-        tool4: nonPreferredTools[3] || emptyTool,
-        tool5: nonPreferredTools[4] || emptyTool,
+        role: outputMessage.role,
+        content: "",
+        tool1: emptyTool,
+        tool2: emptyTool,
+        tool3: emptyTool,
+        tool4: emptyTool,
+        tool5: emptyTool,
       },
       history: history,
     };
@@ -161,6 +156,7 @@ function convertHistoryMessage(
   };
 
   if (message.role === "assistant" && message.tool_calls?.length) {
+    // Only support tool1 for history messages as per current UI structure
     const toolCall = message.tool_calls[0];
     baseMessage.tool1 = convertToolCallToTool(toolCall);
   }
@@ -245,4 +241,4 @@ function convertToolCallToTool(toolCall: any): ITool {
   };
 }
 
-export { convertFromFinetune };
+export { convertFromFinetuneSft };
