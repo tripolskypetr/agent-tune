@@ -42,9 +42,18 @@ const createToolParameter = (name: string, index: number): TypedField => ({
       isVisible: (data) => !!get(data, `${name}.arg${index}.name`),
       fields: [
         {
-          type: FieldType.Text,
+          type: FieldType.Combo,
+          itemList: [
+            "string"
+          ],
           isVisible: (data) => !!get(data, `${name}.arg${index}.name`),
-          readonly: true,
+          isIncorrect: (data) => {
+            if (!get(data, `${name}.arg${index}.type`)) {
+              return "Required"
+            }
+            return null;
+          },
+          dirty: true,
           name: `${name}.arg${index}.type`,
           title: "Type",
           defaultValue: "string",
@@ -52,6 +61,13 @@ const createToolParameter = (name: string, index: number): TypedField => ({
         {
           type: FieldType.Text,
           isVisible: (data) => !!get(data, `${name}.arg${index}.name`),
+          isIncorrect: (data) => {
+            if (!get(data, `${name}.arg${index}.description`)) {
+              return "Required"
+            }
+            return null;
+          },
+          dirty: true,
           inputRows: 3,
           name: `${name}.arg${index}.description`,
           title: "Description",
@@ -74,7 +90,7 @@ const createToolParameter = (name: string, index: number): TypedField => ({
   ],
 });
 
-const createTool = (name: string): TypedField => ({
+const createTool = (name: string, index: number): TypedField => ({
   type: FieldType.Group,
   fields: [
     {
@@ -82,13 +98,20 @@ const createTool = (name: string): TypedField => ({
       outlined: true,
       labelShrink: true,
       name: `${name}.name`,
-      title: "Tool name",
+      title: `Tool ${index} name`,
       placeholder: "Start to type to expand",
     },
     {
       type: FieldType.Text,
       outlined: true,
       isVisible: (data) => !!get(data, `${name}.name`),
+      dirty: true,
+      isIncorrect: (data) => {
+        if (!get(data, `${name}.description`)) {
+          return "Required"
+        }
+        return null;
+      },
       inputRows: 5,
       name: `${name}.description`,
       title: "Tool description",
@@ -392,11 +415,11 @@ export const fields: TypedField[] = [
     title: "Input Tools",
     description: "List of tools available",
     fields: [
-      createTool("input.tool1"),
-      createTool("input.tool2"),
-      createTool("input.tool3"),
-      createTool("input.tool4"),
-      createTool("input.tool5"),
+      createTool("input.tool1", 1),
+      createTool("input.tool2", 2),
+      createTool("input.tool3", 3),
+      createTool("input.tool4", 4),
+      createTool("input.tool5", 5),
     ],
   },
   {
