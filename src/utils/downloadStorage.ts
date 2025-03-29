@@ -1,16 +1,15 @@
 import { IStorageItem } from "../config/storage";
-import { convertToFinetune } from "./convertToFinetune";
 
-function downloadFinetune(
+function downloadStorage(
   storageItems: IStorageItem[],
-  filename: string = `finetune.${new Date().toISOString()}.jsonl`
+  filename: string = `storage.${new Date().toISOString()}.json`
 ): void {
 
   if (!storageItems) {
     return;
   }
 
-  const jsonlContent = convertToFinetune(storageItems);
+  const jsonlContent = JSON.stringify(storageItems);
 
   const blob = new Blob([jsonlContent], { type: "text/plain;charset=utf-8" });
 
@@ -26,4 +25,4 @@ function downloadFinetune(
   setTimeout(() => window.URL.revokeObjectURL(url));
 }
 
-export { downloadFinetune };
+export { downloadStorage };

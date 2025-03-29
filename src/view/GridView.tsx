@@ -1,4 +1,4 @@
-import { Add, CopyAll, Delete, Edit, Publish, Save } from "@mui/icons-material";
+import { Add, CloudUpload, CopyAll, Delete, Edit, FileOpen, MoveToInbox, Outbox, Publish, Refresh, Save } from "@mui/icons-material";
 import storage, { IStorageItem } from "../config/storage";
 import {
   Breadcrumbs2,
@@ -11,12 +11,14 @@ import {
   randomString,
   useAsyncValue,
   getInitialData,
+  IBreadcrumbs2Action,
 } from "react-declarative";
 import history from "../config/history";
 import { Container, Paper } from "@mui/material";
 import { downloadFinetune } from "../utils/downloadFinetune";
 import { convertFromFinetune } from "../utils/convertFromFinetune";
 import { fields } from "./OneView";
+import { downloadStorage } from "../utils/downloadStorage";
 
 const columns: IGridColumn[] = [
   {
@@ -77,14 +79,40 @@ const options: IBreadcrumbs2Option[] = [
   },
   {
     type: Breadcrumbs2Type.Button,
-    label: "Download",
+    label: "Save",
     icon: Save,
-    action: "download-action",
+    action: "save-action",
+  },
+];
+
+const actions: IBreadcrumbs2Action[] = [
+  {
+    label: "Refresh",
+    icon: Refresh,
+    action: "refresh-action",
   },
   {
-    type: Breadcrumbs2Type.Fab,
-    action: "open-action",
-    icon: Publish,
+    label: "Save",
+    icon: Save,
+    action: "save-action",
+  },
+  {
+    label: "Load",
+    icon: FileOpen,
+    action: "load-action",
+  },
+  {
+    divider: true,
+  },
+  {
+    action: "export-action",
+    label: "Export to jsonl",
+    icon: Outbox,
+  },
+  {
+    label: "Import from jsonl",
+    icon: MoveToInbox,
+    action: "import-action",
   },
 ];
 
@@ -110,7 +138,7 @@ export const GridView = () => {
     }
   };
 
-  const handleOpen = async () => {
+  const handleImport = async () => {
     const blob = await chooseFile("*.jsonl");
     if (!blob) {
       return;
@@ -121,8 +149,18 @@ export const GridView = () => {
     execute();
   };
 
+  const handleOpen = async () => {
+    const blob = await chooseFile("*.json");
+    if (!blob) {
+      return;
+    }
+    const text = await blob.text();
+    const json = JSON.parse(text);
+    storage.setValue(json);
+    execute();
+  }
+
   const handleCreate = () => {
-    console.log("here");
     const newItem: Partial<IStorageItem> = {
       id: randomString(),
       ...getInitialData(fields),
@@ -132,15 +170,23 @@ export const GridView = () => {
   };
 
   const handleAction = async (action: string) => {
+    if (action === "save-action") {
+      downloadStorage(storage.getValue());
+    }
+    if (action === "load-action") {
+      handleOpen();
+    }
+    if (action === "refresh-action") {
+      execute();
+    }
     if (action === "create-action") {
       handleCreate();
     }
-    if (action === "download-action") {
-      console.log("here");
+    if (action === "export-action") {
       downloadFinetune(storage.getValue());
     }
-    if (action === "open-action") {
-      handleOpen();
+    if (action === "import-action") {
+      handleImport();
     }
   };
 
@@ -154,7 +200,7 @@ export const GridView = () => {
 
   return (
     <Container>
-      <Breadcrumbs2 items={options} onAction={handleAction} />
+      <Breadcrumbs2 items={options} actions={actions} onAction={handleAction} />
       <Paper>
         <Grid
           sx={{

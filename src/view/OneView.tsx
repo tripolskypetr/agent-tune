@@ -528,7 +528,7 @@ export const OneView = ({ id }: IOneViewProps) => {
   });
 
   const pickAlert = useAlert({
-    title: "The invalid tool calls",
+    title: "Validation error",
     large: true,
   });
 
@@ -542,7 +542,8 @@ export const OneView = ({ id }: IOneViewProps) => {
       const { errors, valid } = validateToolCalls(pendingData);
       if (!valid) {
         pickAlert({
-          description: JSON.stringify(errors, null, 2),
+          title: "The invalid tool calls",
+          description: errors.map((text, idx) => `${idx + 1}) ${text}`).join("\n\n")
         });
         return;
       }
