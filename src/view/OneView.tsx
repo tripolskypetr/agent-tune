@@ -1,23 +1,30 @@
 import { Save } from "@mui/icons-material";
 import { Container } from "@mui/material";
-import { get } from "lodash-es";
+import { get, set } from "lodash-es";
 import {
   Breadcrumbs2,
   Breadcrumbs2Type,
   FieldType,
+  getAvailableFields,
   IBreadcrumbs2Option,
   One,
   TypedField,
   useActualCallback,
+  useAlert,
   useConfirm,
   useSnack,
+  getInitialData,
 } from "react-declarative";
 import history from "../config/history";
 import { useState } from "react";
 import storage, { IStorageItem } from "../config/storage";
+import { validateToolCalls } from "../validation/validateToolCalls";
 
 const createToolParameter = (name: string, index: number): TypedField => ({
   type: FieldType.Outline,
+  isVisible: (data) => {
+    return get(data, `${name}.name`);
+  },
   fieldBottomMargin: "2",
   fields: [
     {
@@ -35,6 +42,9 @@ const createToolParameter = (name: string, index: number): TypedField => ({
       fields: [
         {
           type: FieldType.Text,
+          isVisible: (data) => {
+            return get(data, `${name}.arg${index}.name`);
+          },
           readonly: true,
           name: `${name}.arg${index}.type`,
           title: "Type",
@@ -42,18 +52,27 @@ const createToolParameter = (name: string, index: number): TypedField => ({
         },
         {
           type: FieldType.Text,
+          isVisible: (data) => {
+            return get(data, `${name}.arg${index}.name`);
+          },
           inputRows: 3,
           name: `${name}.arg${index}.description`,
           title: "Description",
         },
         {
           type: FieldType.Items,
+          isVisible: (data) => {
+            return get(data, `${name}.arg${index}.name`);
+          },
           name: `${name}.arg${index}.enum`,
           title: "Enum",
           freeSolo: true,
         },
         {
           type: FieldType.Checkbox,
+          isVisible: (data) => {
+            return get(data, `${name}.arg${index}.name`);
+          },
           name: `${name}.arg${index}.required`,
           title: "Required",
         },
@@ -120,6 +139,9 @@ const createToolOutput = (name: string): TypedField => ({
       fields: [
         {
           type: FieldType.Text,
+          isVisible: (data) => {
+            return get(data, `${name}.name`);
+          },
           columns: "4",
           name: `${name}.arg1.key`,
           title: "Argument 1 Key",
@@ -128,6 +150,9 @@ const createToolOutput = (name: string): TypedField => ({
         },
         {
           type: FieldType.Text,
+          isVisible: (data) => {
+            return get(data, `${name}.name`);
+          },
           columns: "8",
           name: `${name}.arg1.value`,
           isDisabled: (data) => {
@@ -138,6 +163,9 @@ const createToolOutput = (name: string): TypedField => ({
         },
         {
           type: FieldType.Text,
+          isVisible: (data) => {
+            return get(data, `${name}.name`);
+          },
           columns: "4",
           name: `${name}.arg2.key`,
           title: "Argument 2 Key",
@@ -146,6 +174,9 @@ const createToolOutput = (name: string): TypedField => ({
         },
         {
           type: FieldType.Text,
+          isVisible: (data) => {
+            return get(data, `${name}.name`);
+          },
           columns: "8",
           name: `${name}.arg2.value`,
           isDisabled: (data) => {
@@ -156,6 +187,9 @@ const createToolOutput = (name: string): TypedField => ({
         },
         {
           type: FieldType.Text,
+          isVisible: (data) => {
+            return get(data, `${name}.name`);
+          },
           columns: "4",
           name: `${name}.arg3.key`,
           title: "Argument 3 Key",
@@ -164,6 +198,9 @@ const createToolOutput = (name: string): TypedField => ({
         },
         {
           type: FieldType.Text,
+          isVisible: (data) => {
+            return get(data, `${name}.name`);
+          },
           columns: "8",
           name: `${name}.arg3.value`,
           isDisabled: (data) => {
@@ -174,6 +211,9 @@ const createToolOutput = (name: string): TypedField => ({
         },
         {
           type: FieldType.Text,
+          isVisible: (data) => {
+            return get(data, `${name}.name`);
+          },
           columns: "4",
           name: `${name}.arg4.key`,
           title: "Argument 4 Key",
@@ -182,6 +222,9 @@ const createToolOutput = (name: string): TypedField => ({
         },
         {
           type: FieldType.Text,
+          isVisible: (data) => {
+            return get(data, `${name}.name`);
+          },
           columns: "8",
           name: `${name}.arg4.value`,
           isDisabled: (data) => {
@@ -192,6 +235,9 @@ const createToolOutput = (name: string): TypedField => ({
         },
         {
           type: FieldType.Text,
+          isVisible: (data) => {
+            return get(data, `${name}.name`);
+          },
           columns: "4",
           name: `${name}.arg5.key`,
           title: "Argument 5 Key",
@@ -200,6 +246,9 @@ const createToolOutput = (name: string): TypedField => ({
         },
         {
           type: FieldType.Text,
+          isVisible: (data) => {
+            return get(data, `${name}.name`);
+          },
           columns: "8",
           name: `${name}.arg5.value`,
           isDisabled: (data) => {
@@ -447,6 +496,26 @@ interface IOneViewProps {
   id: string;
 }
 
+const INITIAL_DATA = getInitialData(fields);
+
+const polishData = async (data: IStorageItem) => {
+  const output: Partial<IStorageItem> = {};
+  const { visible, hidden } = await getAvailableFields(fields, data, {});
+  visible.forEach(({ name }) => {
+    if (name) {
+      const value = get(data, name);
+      set(output, name, value);
+    }
+  });
+  hidden.forEach(({ name }) => {
+    if (name) {
+      set(output, name, get(INITIAL_DATA, name));
+    }
+  });
+  output.id = data.id;
+  return output as IStorageItem;
+};
+
 export const OneView = ({ id }: IOneViewProps) => {
   const [data, setData] = useState<IStorageItem | null>(null);
 
@@ -458,16 +527,31 @@ export const OneView = ({ id }: IOneViewProps) => {
     canCancel: true,
   });
 
-  const handleSave = useActualCallback(() => {
+  const pickAlert = useAlert({
+    title: "The invalid tool calls",
+    large: true,
+  });
+
+  const handleSave = useActualCallback(async () => {
     if (!data) {
       notify("There are no changes to save");
       return;
+    }
+    const pendingData = await polishData(data);
+    {
+      const { errors, valid } = validateToolCalls(pendingData);
+      if (!valid) {
+        pickAlert({
+          description: JSON.stringify(errors, null, 2),
+        });
+        return;
+      }
     }
     const items = storage.getValue();
     storage.setValue(
       items.map((row) => {
         if (row.id === id) {
-          return { ...data, id };
+          return { ...pendingData, id };
         }
         return row;
       })
