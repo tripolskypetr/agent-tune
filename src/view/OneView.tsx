@@ -590,6 +590,12 @@ export const OneView = ({ id }: IOneViewProps) => {
         return row;
       })
     );
+    {
+      const data = draft.getValue();
+      if (data?.id === id) {
+        draft.setValue(null);
+      }
+    }
     setData(null);
     notify("Changes saved");
   });

@@ -15,6 +15,7 @@ import {
   useConfirm,
   useOnce,
   not,
+  singleshot,
 } from "react-declarative";
 import history from "../config/history";
 import { Checkbox, Container, Paper } from "@mui/material";
@@ -24,7 +25,7 @@ import { fields } from "./OneView";
 import { downloadStorage } from "../utils/downloadStorage";
 import draft from "../config/draft";
 
-const DRAFT_ID = draft.getValue()?.id ?? null;
+const getDraftId = singleshot(() => draft.getValue()?.id ?? null);
 
 const columns: IGridColumn[] = [
   {
@@ -34,7 +35,7 @@ const columns: IGridColumn[] = [
     width: () => 85,
     format: (data: IStorageItem) => (
       <Checkbox
-        checked={data.id === DRAFT_ID}
+        checked={data.id === getDraftId()}
       />
     ),
   },
@@ -162,6 +163,7 @@ export const GridView = () => {
   });
 
   const [data, { loading, execute }] = useAsyncValue(() => {
+    getDraftId.clear();
     const items = storage.getValue();
     return items ? items : [];
   });
