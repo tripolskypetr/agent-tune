@@ -37,8 +37,38 @@ export function validateToolCalls(item: IStorageItem): {
   ];
 
   const inputToolMap = new Map<string, IToolDefinition>();
-  inputTools.forEach((toolDef) => {
-    if (toolDef?.name) {
+  inputTools.forEach((toolDef, index) => {
+    const toolPosition = `tool${index + 1}`;
+    
+    if (!toolDef) return;
+
+    // Validate input tool parameter names
+    const parameterNames = new Set<string>();
+    for (let argNum = 1; argNum <= 5; argNum++) {
+      const argKey = `arg${argNum}` as keyof IToolDefinition;
+      const arg = toolDef[argKey];
+
+      if (typeof arg === "string") {
+        continue;
+      }
+      
+      if (arg?.name) {
+        if (parameterNames.has(arg.name)) {
+          errors.push(
+            `input.${toolPosition}.${argKey}: Duplicate parameter name '${arg.name}'`
+          );
+        } else {
+          parameterNames.add(arg.name);
+        }
+      }
+    }
+
+    if (toolDef.name) {
+      if (inputToolMap.has(toolDef.name)) {
+        errors.push(
+          `input.${toolPosition}: Tool name '${toolDef.name}' is not unique`
+        );
+      }
       inputToolMap.set(toolDef.name, toolDef);
     }
   });
@@ -81,6 +111,9 @@ function validateOutputTools(
       return;
     }
 
+    // Track parameter names to check for duplicates
+    const parameterNames = new Set<string>();
+
     for (let argNum = 1; argNum <= 5; argNum++) {
       const argKey = `arg${argNum}` as keyof ITool;
       const arg = tool[argKey];
@@ -89,6 +122,18 @@ function validateOutputTools(
         continue;
       }
 
+      // Check for duplicate parameter names
+      if (arg?.key) {
+        if (parameterNames.has(arg.key)) {
+          errors.push(
+            `${context}.${toolPosition}.${argKey}: Duplicate parameter name '${arg.key}'`
+          );
+        } else {
+          parameterNames.add(arg.key);
+        }
+      }
+
+      // Existing validation checks
       const argDef = toolDef[argKey] as IToolArgumentMetadata | undefined;
 
       if (!argDef?.name) continue;
