@@ -288,7 +288,10 @@ export const fields: TypedField[] = [
     title: "Conversation context",
   },
   {
-    type: FieldType.Paper,
+    type: FieldType.Expansion,
+    expansionOpened: true,
+    title: "Chat history",
+    description: "Several chat messages to get the model to Context",
     fields: [
       createMessage("history", 1),
       createMessage("history", 2),
