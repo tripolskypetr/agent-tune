@@ -217,7 +217,11 @@ export const GridView = () => {
   };
 
   const handleRowClick = ({ id }: IStorageItem) => {
-    history.push(`/${id}`);
+    if (storage.getValue().some((row) => row.id === id)) {
+      history.push(`/${id}`);
+      return;
+    }
+    execute();
   };
 
   if (!data) {
