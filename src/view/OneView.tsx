@@ -457,6 +457,7 @@ export const OneView = ({ id }: IOneViewProps) => {
 
   const handleSave = useActualCallback(() => {
     if (!data) {
+      notify("There are no changes to save");
       return;
     }
     const items = storage.getValue();

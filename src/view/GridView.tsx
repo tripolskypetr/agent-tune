@@ -13,7 +13,7 @@ import {
   getInitialData,
 } from "react-declarative";
 import history from "../config/history";
-import { Container } from "@mui/material";
+import { Container, Paper } from "@mui/material";
 import { downloadFinetune } from "../utils/downloadFinetune";
 import { convertFromFinetune } from "../utils/convertFromFinetune";
 import { fields } from "./OneView";
@@ -96,9 +96,9 @@ export const GridView = () => {
 
   const handleRowAction = (action: string, row: IStorageItem) => {
     if (action === "copy-action") {
-        const items = storage.getValue();
-        storage.setValue([...items, { ...row, id: randomString() }]);
-        execute();
+      const items = storage.getValue();
+      storage.setValue([...items, { ...row, id: randomString() }]);
+      execute();
     }
     if (action === "remove-action") {
       const items = storage.getValue();
@@ -155,17 +155,19 @@ export const GridView = () => {
   return (
     <Container>
       <Breadcrumbs2 items={options} onAction={handleAction} />
-      <Grid
-        sx={{
-          height: "calc(100vh - 100px)",
-        }}
-        data={data}
-        loading={loading}
-        rowActions={rowActions}
-        columns={columns}
-        onRowAction={handleRowAction}
-        onRowClick={handleRowClick}
-      />
+      <Paper>
+        <Grid
+          sx={{
+            height: "calc(100vh - 100px)",
+          }}
+          data={data}
+          loading={loading}
+          rowActions={rowActions}
+          columns={columns}
+          onRowAction={handleRowAction}
+          onRowClick={handleRowClick}
+        />
+      </Paper>
     </Container>
   );
 };
