@@ -1,13 +1,111 @@
 import { IStorageItem } from "../config/storage";
 import { convertToFinetuneSft } from "./convertToFinetune.sft";
 
+const mapCohere = (storageItems: IStorageItem[]) =>
+  storageItems.map((item) => ({
+    ...item,
+    preferred_output: {
+      ...item.preferred_output,
+      role: "Chatbot",
+      tool1: undefined,
+      tool2: undefined,
+      tool3: undefined,
+      tool4: undefined,
+      tool5: undefined,
+    },
+    non_preferred_output: {
+      ...item.non_preferred_output,
+      role: "Chatbot",
+      tool1: undefined,
+      tool2: undefined,
+      tool3: undefined,
+      tool4: undefined,
+      tool5: undefined,
+    },
+    input: {
+      ...item.input,
+      role: "User",
+      tool1: undefined,
+      tool2: undefined,
+      tool3: undefined,
+      tool4: undefined,
+      tool5: undefined,
+    },
+    history: {
+      message1: item.history.message1
+        ? {
+            ...item.history.message1,
+            role:
+              item.history.message1.role === "system"
+                ? "System"
+                : item.history.message1.role === "user"
+                ? "User"
+                : "Chatbot",
+            tool1: undefined,
+          }
+        : undefined,
+      message2: item.history.message2
+        ? {
+            ...item.history.message2,
+            role:
+              item.history.message2.role === "system"
+                ? "System"
+                : item.history.message2.role === "user"
+                ? "User"
+                : "Chatbot",
+            tool1: undefined,
+          }
+        : undefined,
+      message3: item.history.message3
+        ? {
+            ...item.history.message3,
+            role:
+              item.history.message3.role === "system"
+                ? "System"
+                : item.history.message3.role === "user"
+                ? "User"
+                : "Chatbot",
+            tool1: undefined,
+          }
+        : undefined,
+      message4: item.history.message4
+        ? {
+            ...item.history.message4,
+            role:
+              item.history.message4.role === "system"
+                ? "System"
+                : item.history.message4.role === "user"
+                ? "User"
+                : "Chatbot",
+            tool1: undefined,
+          }
+        : undefined,
+      message5: item.history.message5
+        ? {
+            ...item.history.message5,
+            role:
+              item.history.message5.role === "system"
+                ? "System"
+                : item.history.message5.role === "user"
+                ? "User"
+                : "Chatbot",
+            tool1: undefined,
+          }
+        : undefined,
+    },
+  }));
+
 function downloadFinetuneSft(
   storageItems: IStorageItem[],
+  format: "openai" | "cohere",
   filename: string = `finetune.${new Date().toISOString()}.jsonl`
 ): void {
-
   if (!storageItems) {
     return;
+  }
+
+  if (format === "cohere") {
+    storageItems = mapCohere(storageItems) as unknown as IStorageItem[];
   }
 
   const jsonlContent = convertToFinetuneSft(storageItems);

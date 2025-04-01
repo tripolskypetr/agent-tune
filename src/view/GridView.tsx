@@ -30,6 +30,9 @@ import {
   useOnce,
   not,
   singleshot,
+  useOne,
+  TypedField,
+  FieldType,
 } from "react-declarative";
 import history from "../config/history";
 import { Checkbox, Container, Paper } from "@mui/material";
@@ -183,7 +186,47 @@ const actions: IBreadcrumbs2Action[] = [
   },
 ];
 
+const format_fields: TypedField[] = [
+  {
+    type: FieldType.Radio,
+    name: "format",
+    radioValue: "openai",
+    title: "OpenAI format",
+    defaultValue: "openai",
+  },
+  {
+    type: FieldType.Typography,
+    sx: {
+      opacity: 0.6,
+    },
+    typoVariant: "body2",
+    placeholder:
+      'OpenAI format means the next standart tole fields will be user: "system", "user" and "assistant".',
+  },
+  {
+    type: FieldType.Radio,
+    name: "format",
+    radioValue: "cohere",
+    title: "Cohere format",
+  },
+  {
+    type: FieldType.Typography,
+    sx: {
+      opacity: 0.6,
+    },
+    typoVariant: "body2",
+    placeholder:
+      'Cohere format means the next role field values will be user: "System", "User" and "Chatbot".',
+  },
+];
+
 export const GridView = () => {
+  const pickFormat = useOne({
+    title: "Pick finetune format",
+    fields: format_fields,
+    canCancel: true,
+  });
+
   const pickDraft = useConfirm({
     title: "The unsaved draft found",
     msg: "Looks like there is unsaved draft. Would you like to open it?",
@@ -283,6 +326,22 @@ export const GridView = () => {
     }
   };
 
+  const handleExport = async () => {
+    const data = await pickFormat().toPromise();
+    if (!data) {
+      return;
+    }
+    downloadFinetune(storage.getValue(), data.format);
+  };
+
+  const handleExportSft = async () => {
+    const data = await pickFormat().toPromise();
+    if (!data) {
+      return;
+    }
+    downloadFinetuneSft(storage.getValue(), data.format);
+  };
+
   const handleAction = async (action: string) => {
     if (action === "remove-all-action") {
       handleRemoveAll();
@@ -300,13 +359,13 @@ export const GridView = () => {
       handleCreate();
     }
     if (action === "export-action") {
-      downloadFinetune(storage.getValue());
+      handleExport();
     }
     if (action === "import-action-sft") {
       handleImportSft();
     }
     if (action === "export-action-sft") {
-      downloadFinetuneSft(storage.getValue());
+      handleExportSft();
     }
     if (action === "import-action") {
       handleImport();
