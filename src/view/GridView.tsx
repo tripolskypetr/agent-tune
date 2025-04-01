@@ -200,6 +200,11 @@ const format_fields: TypedField[] = [
       opacity: 0.6,
     },
     typoVariant: "body2",
+    click({}, {}, {}, {}, {}, onChange) {
+      onChange({
+        format: "openai",
+      });
+    },
     placeholder:
       'OpenAI format means the next standart tole fields will be user: "system", "user" and "assistant".',
   },
@@ -211,12 +216,18 @@ const format_fields: TypedField[] = [
   },
   {
     type: FieldType.Typography,
+    fieldBottomMargin: "5",
     sx: {
       opacity: 0.6,
     },
     typoVariant: "body2",
+    click({}, {}, {}, {}, {}, onChange) {
+      onChange({
+        format: "cohere",
+      });
+    },
     placeholder:
-      'Cohere format means the next role field values will be user: "System", "User" and "Chatbot".',
+      'Cohere format means the next role field values will be user: "System", "User" and "Chatbot". Tool calls are not being exported with that method',
   },
 ];
 
