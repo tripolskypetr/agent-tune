@@ -18,6 +18,7 @@ import createCache from "@emotion/cache";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import { CssBaseline } from "@mui/material";
+import SwarmModal from "./components/SwarmModal";
 
 const container = document.getElementById("root")!;
 
@@ -42,6 +43,7 @@ const wrappedApp = (
                 <ModalProvider>
                   <CssBaseline />
                   <App />
+                  <SwarmModal />
                 </ModalProvider>
               </SnackProvider>
             </LocalizationProvider>
