@@ -186,13 +186,13 @@ const actions: IBreadcrumbs2Action[] = [
   },
 ];
 
-const format_fields: TypedField[] = [
+const export_fields: TypedField<{}, { isHfOnly: boolean }>[] = [
   {
     type: FieldType.Radio,
     name: "format",
-    radioValue: "openai",
-    title: "OpenAI format",
-    defaultValue: "openai",
+    radioValue: "hf",
+    title: "HuggingFace format",
+    defaultValue: "hf",
   },
   {
     type: FieldType.Typography,
@@ -202,17 +202,46 @@ const format_fields: TypedField[] = [
     typoVariant: "body2",
     click({}, {}, {}, {}, {}, onChange) {
       onChange({
+        format: "hf",
+      });
+    },
+    placeholder:
+      'HuggingFace format means the next standart role fields will be user: "system", "user" and "assistant". Tools are included in this type of export',
+  },
+  {
+    type: FieldType.Radio,
+    name: "format",
+    radioValue: "openai",
+    title: "OpenAI format",
+    isDisabled: ({}, { isHfOnly }) => {
+      return isHfOnly || false;
+    },
+  },
+  {
+    type: FieldType.Typography,
+    sx: {
+      opacity: 0.6,
+    },
+    typoVariant: "body2",
+    click({}, {}, {}, { isHfOnly }, {}, onChange) {
+      if (isHfOnly) {
+        return;
+      }
+      onChange({
         format: "openai",
       });
     },
     placeholder:
-      'OpenAI format means the next standart tole fields will be user: "system", "user" and "assistant".',
+      'OpenAI format means the next standart role fields will be user: "system", "user" and "assistant". Tool calls are not being exported with that method',
   },
   {
     type: FieldType.Radio,
     name: "format",
     radioValue: "cohere",
     title: "Cohere format",
+    isDisabled: ({}, { isHfOnly }) => {
+      return isHfOnly || false;
+    },
   },
   {
     type: FieldType.Typography,
@@ -221,7 +250,10 @@ const format_fields: TypedField[] = [
       opacity: 0.6,
     },
     typoVariant: "body2",
-    click({}, {}, {}, {}, {}, onChange) {
+    click({}, {}, {}, { isHfOnly }, {}, onChange) {
+      if (isHfOnly) {
+        return;
+      }
       onChange({
         format: "cohere",
       });
@@ -232,9 +264,9 @@ const format_fields: TypedField[] = [
 ];
 
 export const GridView = () => {
-  const pickFormat = useOne({
+  const pickFinetuneFormat = useOne({
     title: "Pick finetune format",
-    fields: format_fields,
+    fields: export_fields,
     canCancel: true,
   });
 
@@ -289,6 +321,15 @@ export const GridView = () => {
   };
 
   const handleImport = async () => {
+    const isConfirmed = await pickFinetuneFormat({
+      title: "Pick finetune import format",
+      payload: {
+        isHfOnly: true,
+      },
+    }).toPromise();
+    if (!isConfirmed) {
+      return;
+    }
     const blob = await chooseFile("*.jsonl");
     if (!blob) {
       return;
@@ -300,6 +341,15 @@ export const GridView = () => {
   };
 
   const handleImportSft = async () => {
+    const isConfirmed = await pickFinetuneFormat({
+      title: "Pick finetune import format",
+      payload: {
+        isHfOnly: true,
+      },
+    }).toPromise();
+    if (!isConfirmed) {
+      return;
+    }
     const blob = await chooseFile("*.jsonl");
     if (!blob) {
       return;
@@ -338,7 +388,9 @@ export const GridView = () => {
   };
 
   const handleExport = async () => {
-    const data = await pickFormat().toPromise();
+    const data = await pickFinetuneFormat({
+      title: "Pick finetune export format",
+    }).toPromise();
     if (!data) {
       return;
     }
@@ -346,7 +398,9 @@ export const GridView = () => {
   };
 
   const handleExportSft = async () => {
-    const data = await pickFormat().toPromise();
+    const data = await pickFinetuneFormat({
+      title: "Pick finetune export format",
+    }).toPromise();
     if (!data) {
       return;
     }

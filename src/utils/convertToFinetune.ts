@@ -5,182 +5,42 @@ import {
   IToolDefinition,
 } from "../config/storage";
 
+interface BaseMessage {
+  role: string;
+  content: string;
+}
+
+interface ToolCallMessage extends BaseMessage {
+  role: "assistant";
+  tool_calls: ReturnType<typeof convertToolCall>[];
+}
+
+type Message = BaseMessage | ToolCallMessage;
+
+interface InputData {
+  messages: Message[];
+  tools: {
+    type: "function";
+    function: ReturnType<typeof convertToolDefinition>;
+  }[];
+  parallel_tool_calls: boolean;
+}
+
 function convertToFinetune(storageItems: IStorageItem[]): string {
   const jsonlLines = storageItems
     .map((item) => {
-      // Construct input messages (history + input prompt)
-      const inputMessages = [
-        item.history.message1?.role
-          ? {
-              role: item.history.message1.role,
-              content: item.history.message1.content,
-              ...(item.history.message1.role === "assistant" &&
-              item.history.message1.tool1?.name
-                ? {
-                    tool_calls: [convertToolCall(item.history.message1.tool1)],
-                  }
-                : {}),
-            }
-          : null,
-        item.history.message2?.role
-          ? {
-              role: item.history.message2.role,
-              content: item.history.message2.content,
-              ...(item.history.message2.role === "assistant" &&
-              item.history.message2.tool1?.name
-                ? {
-                    tool_calls: [convertToolCall(item.history.message2.tool1)],
-                  }
-                : {}),
-            }
-          : null,
-        item.history.message3?.role
-          ? {
-              role: item.history.message3.role,
-              content: item.history.message3.content,
-              ...(item.history.message3.role === "assistant" &&
-              item.history.message3.tool1?.name
-                ? {
-                    tool_calls: [convertToolCall(item.history.message3.tool1)],
-                  }
-                : {}),
-            }
-          : null,
-        item.history.message4?.role
-          ? {
-              role: item.history.message4.role,
-              content: item.history.message4.content,
-              ...(item.history.message4.role === "assistant" &&
-              item.history.message4.tool1?.name
-                ? {
-                    tool_calls: [convertToolCall(item.history.message4.tool1)],
-                  }
-                : {}),
-            }
-          : null,
-        item.history.message5?.role
-          ? {
-              role: item.history.message5.role,
-              content: item.history.message5.content,
-              ...(item.history.message5.role === "assistant" &&
-              item.history.message5.tool1?.name
-                ? {
-                    tool_calls: [convertToolCall(item.history.message5.tool1)],
-                  }
-                : {}),
-            }
-          : null,
-        {
-          role: item.input.role,
-          content: item.input.content,
-        },
-        // @ts-ignore
-      ].filter((msg) => msg && (msg.content || msg.tool_calls?.length > 0));
-
-      // Construct tools array for input
-      const tools = [
-        item.input.tool1?.name
-          ? {
-              type: "function",
-              function: convertToolDefinition(item.input.tool1),
-            }
-          : null,
-        item.input.tool2?.name
-          ? {
-              type: "function",
-              function: convertToolDefinition(item.input.tool2),
-            }
-          : null,
-        item.input.tool3?.name
-          ? {
-              type: "function",
-              function: convertToolDefinition(item.input.tool3),
-            }
-          : null,
-        item.input.tool4?.name
-          ? {
-              type: "function",
-              function: convertToolDefinition(item.input.tool4),
-            }
-          : null,
-        item.input.tool5?.name
-          ? {
-              type: "function",
-              function: convertToolDefinition(item.input.tool5),
-            }
-          : null,
-      ].filter(Boolean);
-
-      // Construct preferred output
-      const preferredOutput = [
-        {
-          role: item.preferred_output.role,
-          content: item.preferred_output.content,
-          ...(item.preferred_output.tool1?.name
-            ? {
-                tool_calls: [
-                  item.preferred_output.tool1?.name
-                    ? convertToolCall(item.preferred_output.tool1)
-                    : null,
-                  item.preferred_output.tool2?.name
-                    ? convertToolCall(item.preferred_output.tool2)
-                    : null,
-                  item.preferred_output.tool3?.name
-                    ? convertToolCall(item.preferred_output.tool3)
-                    : null,
-                  item.preferred_output.tool4?.name
-                    ? convertToolCall(item.preferred_output.tool4)
-                    : null,
-                  item.preferred_output.tool5?.name
-                    ? convertToolCall(item.preferred_output.tool5)
-                    : null,
-                ].filter(Boolean),
-              }
-            : {}),
-        },
-      ].filter((msg) => msg.content || msg.tool_calls?.length > 0);
-
-      // Construct non-preferred output
-      const nonPreferredOutput = [
-        {
-          role: item.non_preferred_output.role,
-          content: item.non_preferred_output.content,
-          ...(item.non_preferred_output.tool1?.name
-            ? {
-                tool_calls: [
-                  item.non_preferred_output.tool1?.name
-                    ? convertToolCall(item.non_preferred_output.tool1)
-                    : null,
-                  item.non_preferred_output.tool2?.name
-                    ? convertToolCall(item.non_preferred_output.tool2)
-                    : null,
-                  item.non_preferred_output.tool3?.name
-                    ? convertToolCall(item.non_preferred_output.tool3)
-                    : null,
-                  item.non_preferred_output.tool4?.name
-                    ? convertToolCall(item.non_preferred_output.tool4)
-                    : null,
-                  item.non_preferred_output.tool5?.name
-                    ? convertToolCall(item.non_preferred_output.tool5)
-                    : null,
-                ].filter(Boolean),
-              }
-            : {}),
-        },
-      ].filter((msg) => msg.content || msg.tool_calls?.length > 0);
+      const input = buildInput(item);
+      const preferredOutput = buildOutput(item.preferred_output);
+      const nonPreferredOutput = buildOutput(item.non_preferred_output);
 
       const dpoFormat = {
-        input: {
-          messages: inputMessages,
-          tools: tools,
-          parallel_tool_calls: true,
-        },
+        input,
         preferred_output: preferredOutput,
         non_preferred_output: nonPreferredOutput,
       };
 
       if (
-        !inputMessages.length ||
+        !input.messages.length ||
         !preferredOutput.length ||
         !nonPreferredOutput.length
       ) {
@@ -194,7 +54,84 @@ function convertToFinetune(storageItems: IStorageItem[]): string {
   return jsonlLines.join("\n");
 }
 
-// Keep the supporting functions as they are since they're still needed
+function buildInput(item: IStorageItem): InputData {
+  const messages: (Message | null)[] = [
+    buildHistoryMessage(item.history.message1),
+    buildHistoryMessage(item.history.message2),
+    buildHistoryMessage(item.history.message3),
+    buildHistoryMessage(item.history.message4),
+    buildHistoryMessage(item.history.message5),
+    {
+      role: item.input.role,
+      content: item.input.content,
+    },
+  ].filter(
+    (msg) =>
+      msg !== null &&
+      (msg.content || ("tool_calls" in msg && msg.tool_calls.length > 0))
+  );
+
+  const tools = [
+    item.input.tool1,
+    item.input.tool2,
+    item.input.tool3,
+    item.input.tool4,
+    item.input.tool5,
+  ]
+    .filter((tool): tool is IToolDefinition => !!tool?.name)
+    .map((tool) => ({
+      type: "function" as const,
+      function: convertToolDefinition(tool),
+    }));
+
+  return {
+    messages,
+    tools: tools.length > 0 ? tools : [],
+    parallel_tool_calls: true,
+  };
+}
+
+function buildHistoryMessage(
+  message: IStorageItem["history"]["message1"]
+): Message | null {
+  if (!message?.role) return null;
+
+  return {
+    role: message.role,
+    content: message.content,
+    ...(message.role === "assistant" && message.tool1?.name
+      ? { tool_calls: [convertToolCall(message.tool1)] }
+      : {}),
+  } as Message;
+}
+
+function buildOutput(
+  output:
+    | IStorageItem["preferred_output"]
+    | IStorageItem["non_preferred_output"]
+): Message[] {
+  const tool_calls = [
+    output.tool1,
+    output.tool2,
+    output.tool3,
+    output.tool4,
+    output.tool5,
+  ]
+    .filter((tool): tool is ITool => !!tool?.name)
+    .map((tool) => convertToolCall(tool));
+
+  const message: Message = {
+    role: output.role,
+    content: output.content,
+    ...(tool_calls.length > 0 ? { tool_calls } : {}),
+  };
+
+  return [message].filter(
+    (msg: Message) =>
+      msg.content || ("tool_calls" in msg && msg.tool_calls.length > 0)
+  );
+}
+
 function convertToolDefinition(tool: IToolDefinition): any {
   const properties: { [key: string]: any } = {};
   const required: string[] = [];

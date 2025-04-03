@@ -5,127 +5,98 @@ import {
   IToolDefinition,
 } from "../config/storage";
 
+interface BaseMessage {
+  role: string;
+  content: string;
+}
+
+interface ToolCallMessage extends BaseMessage {
+  role: "assistant";
+  tool_calls: ReturnType<typeof convertToolCall>[];
+}
+
+interface ToolsMessage extends BaseMessage {
+  tools: {
+    type: "function";
+    function: ReturnType<typeof convertToolDefinition>;
+  }[];
+}
+
+type Message = BaseMessage | ToolCallMessage | ToolsMessage;
+
 function convertToFinetuneSft(storageItems: IStorageItem[]): string {
   const jsonlLines = storageItems
     .map((item) => {
-      const messages = [
+      const messages: (Message | null)[] = [
         item.history.message1?.role
-          ? {
+          ? ({
               role: item.history.message1.role,
               content: item.history.message1.content,
-              ...(item.history.message1.role === "assistant" && item.history.message1.tool1?.name
+              ...(item.history.message1.role === "assistant" &&
+              item.history.message1.tool1?.name
                 ? {
                     tool_calls: [convertToolCall(item.history.message1.tool1)],
                   }
                 : {}),
-            }
+            } as Message)
           : null,
         item.history.message2?.role
-          ? {
+          ? ({
               role: item.history.message2.role,
               content: item.history.message2.content,
-              ...(item.history.message2.role === "assistant" && item.history.message2.tool1?.name
+              ...(item.history.message2.role === "assistant" &&
+              item.history.message2.tool1?.name
                 ? {
                     tool_calls: [convertToolCall(item.history.message2.tool1)],
                   }
                 : {}),
-            }
+            } as Message)
           : null,
         item.history.message3?.role
-          ? {
+          ? ({
               role: item.history.message3.role,
               content: item.history.message3.content,
-              ...(item.history.message3.role === "assistant" && item.history.message3.tool1?.name
+              ...(item.history.message3.role === "assistant" &&
+              item.history.message3.tool1?.name
                 ? {
                     tool_calls: [convertToolCall(item.history.message3.tool1)],
                   }
                 : {}),
-            }
+            } as Message)
           : null,
         item.history.message4?.role
-          ? {
+          ? ({
               role: item.history.message4.role,
               content: item.history.message4.content,
-              ...(item.history.message4.role === "assistant" && item.history.message4.tool1?.name
+              ...(item.history.message4.role === "assistant" &&
+              item.history.message4.tool1?.name
                 ? {
                     tool_calls: [convertToolCall(item.history.message4.tool1)],
                   }
                 : {}),
-            }
+            } as Message)
           : null,
         item.history.message5?.role
-          ? {
+          ? ({
               role: item.history.message5.role,
               content: item.history.message5.content,
-              ...(item.history.message5.role === "assistant" && item.history.message5.tool1?.name
+              ...(item.history.message5.role === "assistant" &&
+              item.history.message5.tool1?.name
                 ? {
                     tool_calls: [convertToolCall(item.history.message5.tool1)],
                   }
                 : {}),
-            }
+            } as Message)
           : null,
-        {
-          role: item.input.role,
-          content: item.input.content,
-          tools: [
-            item.input.tool1?.name
-              ? {
-                  type: "function",
-                  function: convertToolDefinition(item.input.tool1),
-                }
-              : null,
-            item.input.tool2?.name
-              ? {
-                  type: "function",
-                  function: convertToolDefinition(item.input.tool2),
-                }
-              : null,
-            item.input.tool3?.name
-              ? {
-                  type: "function",
-                  function: convertToolDefinition(item.input.tool3),
-                }
-              : null,
-            item.input.tool4?.name
-              ? {
-                  type: "function",
-                  function: convertToolDefinition(item.input.tool4),
-                }
-              : null,
-            item.input.tool5?.name
-              ? {
-                  type: "function",
-                  function: convertToolDefinition(item.input.tool5),
-                }
-              : null,
-          ].filter(Boolean),
-        },
-        {
-          role: item.preferred_output.role,
-          content: item.preferred_output.content,
-          tool_calls: [
-            item.preferred_output.tool1?.name
-              ? convertToolCall(item.preferred_output.tool1)
-              : null,
-            item.preferred_output.tool2?.name
-              ? convertToolCall(item.preferred_output.tool2)
-              : null,
-            item.preferred_output.tool3?.name
-              ? convertToolCall(item.preferred_output.tool3)
-              : null,
-            item.preferred_output.tool4?.name
-              ? convertToolCall(item.preferred_output.tool4)
-              : null,
-            item.preferred_output.tool5?.name
-              ? convertToolCall(item.preferred_output.tool5)
-              : null,
-          ].filter(Boolean),
-        },
+        buildInputMessage(item),
+        buildOutputMessage(item),
       ];
 
       const openAIFormat = {
         messages: messages.filter(
-          (msg) => msg && (msg.content || msg.tool_calls?.length > 0)
+          (msg) =>
+            msg !== null &&
+            (msg.content || ("tool_calls" in msg && msg.tool_calls?.length > 0))
         ),
       };
 
@@ -138,6 +109,45 @@ function convertToFinetuneSft(storageItems: IStorageItem[]): string {
     .filter((v) => v);
 
   return jsonlLines.join("\n");
+}
+
+function buildInputMessage(item: IStorageItem): Message {
+  const tools = [
+    item.input.tool1,
+    item.input.tool2,
+    item.input.tool3,
+    item.input.tool4,
+    item.input.tool5,
+  ]
+    .filter((tool): tool is IToolDefinition => !!tool?.name)
+    .map((tool) => ({
+      type: "function" as const,
+      function: convertToolDefinition(tool),
+    }));
+
+  return {
+    role: item.input.role,
+    content: item.input.content,
+    ...(tools.length > 0 ? { tools } : {}),
+  } as Message;
+}
+
+function buildOutputMessage(item: IStorageItem): Message {
+  const tool_calls = [
+    item.preferred_output.tool1,
+    item.preferred_output.tool2,
+    item.preferred_output.tool3,
+    item.preferred_output.tool4,
+    item.preferred_output.tool5,
+  ]
+    .filter((tool): tool is ITool => !!tool?.name)
+    .map((tool) => convertToolCall(tool));
+
+  return {
+    role: item.preferred_output.role,
+    content: item.preferred_output.content,
+    ...(tool_calls.length > 0 ? { tool_calls } : {}),
+  } as Message;
 }
 
 function convertToolDefinition(tool: IToolDefinition): any {
@@ -208,7 +218,6 @@ function convertToolCall(tool: ITool): any {
     args[tool.arg5.key] = tool.arg5.value;
   }
 
-  // Generate a random tool_call_id per OpenAI spec
   const toolCallId = `call_${Math.random().toString(36).substr(2, 9)}`;
 
   return {
