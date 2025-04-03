@@ -1,5 +1,6 @@
 import "./config/polyfills";
 import "./config/setup";
+import "./config/tfjs";
 
 import {
   ModalProvider,

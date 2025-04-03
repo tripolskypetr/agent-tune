@@ -12,6 +12,7 @@ import {
   Outbox,
   Refresh,
   Save,
+  Search,
 } from "@mui/icons-material";
 import storage, { IStorageItem } from "../config/storage";
 import {
@@ -34,6 +35,7 @@ import {
   TypedField,
   FieldType,
   OneButton,
+  useDebouncedCallback,
 } from "react-declarative";
 import history from "../config/history";
 import {
@@ -41,9 +43,12 @@ import {
   Breadcrumbs,
   Checkbox,
   Container,
+  IconButton,
+  InputAdornment,
   Link,
   Paper,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import { downloadFinetune } from "../utils/downloadFinetune";
@@ -54,6 +59,11 @@ import draft from "../config/draft";
 import { downloadFinetuneSft } from "../utils/downloadFinetune.sft";
 import { convertFromFinetuneSft } from "../utils/convertFromFinetune.sft";
 import { useFilterData } from "../context/FilterDataContext";
+import { div, mul, norm, ready, sum, tensor1d } from "@tensorflow/tfjs-core";
+import SortedArray from "../helpers/SortedArray";
+import { useState } from "react";
+
+const VECTOR_SEARCH_SIMILARITY = 0.65;
 
 const getDraftId = singleshot(() => draft.getValue()?.id ?? null);
 
@@ -67,6 +77,45 @@ const compareFulltext = (search: string, data: string) => {
   return target.every(function (term) {
     return source.some((word) => word.includes(term));
   });
+};
+
+const createVector = async (text: string) => {
+  await ready();
+  const words = text.toLowerCase().trim().split(/\s+/);
+  const vector = new Float32Array(4);
+  words.forEach((word, index) => {
+    let sum = 0;
+    for (let i = 0; i < word.length; i++) {
+      sum += word.charCodeAt(i) / 1000;
+    }
+    vector[index % 4] += sum / (word.length || 1);
+  });
+  const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
+  return await Array.fromAsync(
+    magnitude ? vector.map((v) => v / magnitude) : vector
+  );
+};
+
+const calculateSimilarity = async (a: number[], b: number[]) => {
+  await ready();
+  const tensorA = tensor1d(a);
+  const tensorB = tensor1d(b);
+  const dotProduct = sum(mul(tensorA, tensorB));
+  const normA = norm(tensorA);
+  const normB = norm(tensorB);
+  const normProduct = mul(normA, normB);
+  const cosineTensor = div(dotProduct, normProduct);
+  const [similarity] = await cosineTensor.data();
+  {
+    tensorA.dispose();
+    tensorB.dispose();
+    dotProduct.dispose();
+    normA.dispose();
+    normB.dispose();
+    normProduct.dispose();
+    cosineTensor.dispose();
+  }
+  return similarity;
 };
 
 const columns: IGridColumn[] = [
@@ -131,16 +180,47 @@ const options: IBreadcrumbs2Option[] = [
     type: Breadcrumbs2Type.Component,
     element: () => {
       const [filterData, setFilterData] = useFilterData();
+      const [searchValue, setSearchValue] = useState(filterData.vector_search);
+
+      const handleSearch = useDebouncedCallback(
+        (value: string) => {
+          setFilterData((prev) => ({
+            ...prev,
+            vector_search: value,
+          }));
+        },
+        1_000,
+        {
+          trailing: true,
+        }
+      );
+
       return (
         <Stack direction="row" alignItems="center" gap={1}>
-          <Breadcrumbs aria-label="breadcrumb">
-            <Link underline="hover" color="inherit">
-              Fine tune
-            </Link>
-            <Link underline="hover" color="inherit">
-              Grid
-            </Link>
-          </Breadcrumbs>
+          <TextField
+            variant="standard"
+            value={searchValue}
+            onChange={({ target }) => {
+              handleSearch.callback(target.value);
+              setSearchValue(target.value);
+            }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    edge="end"
+                    onClick={() => {
+                      handleSearch.callback("");
+                      setSearchValue("");
+                    }}
+                  >
+                    {!!filterData.vector_search ? <Close /> : <Search />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            placeholder="Fulltext search"
+          />
           <Box sx={{ flex: 1 }} />
           <OneButton
             variant="outlined"
@@ -413,10 +493,56 @@ export const GridView = () => {
   });
 
   const [data, { loading, execute }] = useAsyncValue(
-    () => {
+    async () => {
       getDraftId.clear();
       const data = storage.getValue();
-      const items = data ? data : [];
+      const items: IStorageItem[] = [];
+      if (data) {
+        const sortedItems = new SortedArray<IStorageItem>();
+        if (filterData.vector_search) {
+          console.log("[TFJS] Building search vector");
+          const searchVector = await createVector(filterData.vector_search);
+          for (const item of data) {
+            console.log(`[TFJS] Calculating vector for ${item.id}`);
+            const contentVector = await createVector(
+              item?.input?.content || ""
+            );
+            const preferedVector = await createVector(
+              item?.preferred_output?.content || ""
+            );
+            const nonPreferedVector = await createVector(
+              item?.preferred_output?.content || ""
+            );
+            console.log(`[TFJS] Calculating similarity for ${item.id}`);
+            const [
+              contentSimilarity,
+              preferedSimilarity,
+              nonPreferedSimilatiry,
+            ] = await Promise.all([
+              await calculateSimilarity(searchVector, contentVector),
+              await calculateSimilarity(searchVector, preferedVector),
+              await calculateSimilarity(searchVector, nonPreferedVector),
+            ]);
+            const similarity = Math.max(
+              contentSimilarity,
+              preferedSimilarity,
+              nonPreferedSimilatiry
+            );
+            console.log(
+              `[TFJS] Calculating similarity for ${item.id} similarity=${similarity}`
+            );
+            if (similarity > VECTOR_SEARCH_SIMILARITY) {
+              sortedItems.push(item, similarity);
+            }
+          }
+          for (const item of sortedItems) {
+            items.push(item);
+          }
+        } else {
+          data.forEach((item) => items.push(item));
+        }
+      }
+
       return items.filter((item) => {
         let isOk = true;
         if (filterData.user_input) {
