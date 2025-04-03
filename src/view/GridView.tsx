@@ -229,7 +229,11 @@ const options: IBreadcrumbs2Option[] = [
             }}
             waitForChangesDelay={0}
             startIcon={<FilterList />}
-            handler={() => filterData}
+            handler={() => ({
+              non_prefered_output: filterData.non_prefered_output,
+              prefered_output: filterData.prefered_output,
+              user_input: filterData.user_input,
+            })}
             fields={filter_fields}
             onChange={(filterData, initial) => {
               if (!initial) {
