@@ -1,5 +1,11 @@
-import { ArrowDownward, ArrowUpward, Save, SaveAs } from "@mui/icons-material";
-import { Container } from "@mui/material";
+import {
+  ArrowDownward,
+  ArrowUpward,
+  KeyboardArrowLeft,
+  Save,
+  SaveAs,
+} from "@mui/icons-material";
+import { Box, Breadcrumbs, Container, Link, Stack } from "@mui/material";
 import { get, set } from "lodash-es";
 import {
   Breadcrumbs2,
@@ -533,14 +539,26 @@ export const fields: TypedField[] = [
 
 const options: IBreadcrumbs2Option[] = [
   {
-    type: Breadcrumbs2Type.Link,
-    action: "back-action",
-    label: "Fine tune",
-  },
-  {
-    type: Breadcrumbs2Type.Link,
-    action: "back-action",
-    label: "Chat Card",
+    type: Breadcrumbs2Type.Component,
+    element: () => (
+      <Stack
+        direction="row"
+        alignItems="center"
+        onClick={() => history.push("/")}
+      >
+        <Breadcrumbs sx={{ cursor: "pointer", height: "100%" }}>
+          <KeyboardArrowLeft sx={{ display: "flex", alignItems: "center" }} />
+          <Link underline="hover" color="inherit">
+            Back
+          </Link>
+          <Link underline="hover" color="inherit">
+            Fine tune
+          </Link>
+          <Box sx={{ minWidth: '24px' }} />
+        </Breadcrumbs>
+        <Box sx={{ flex: 1 }} />
+      </Stack>
+    ),
   },
   {
     type: Breadcrumbs2Type.Button,

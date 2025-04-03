@@ -575,19 +575,28 @@ export const GridView = () => {
   );
 
   useOnce(async () => {
-    const data = draft.getValue();
-    if (!data) {
-      return;
-    }
-    if (await not(pickDraft().toPromise())) {
-      return;
-    }
-    if (storage.getValue().some((row) => row.id === data.id)) {
-      history.push(`/${data.id}`);
-    } else {
-      storage.setValue([...(storage.getValue() || []), data]);
-      history.push(`/${data.id}`);
-    }
+    const checkDraft = async () => {
+      const data = draft.getValue();
+      if (!data) {
+        return;
+      }
+      if (await not(pickDraft().toPromise())) {
+        return;
+      }
+      if (storage.getValue().some((row) => row.id === data.id)) {
+        history.push(`/${data.id}`);
+      } else {
+        storage.setValue([...(storage.getValue() || []), data]);
+        history.push(`/${data.id}`);
+      }
+    };
+    const checkEmpty = async () => {
+      if (storage.getValue() === null) {
+        handleCreate();
+      }
+    };
+    checkDraft();
+    checkEmpty();
   });
 
   const handleRowAction = (action: string, row: IStorageItem) => {
