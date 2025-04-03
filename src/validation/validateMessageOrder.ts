@@ -6,7 +6,6 @@ export function validateMessageOrder(item: IStorageItem): {
 } {
   const errors: string[] = [];
 
-  // Validate chat history structure
   const historyMessages = [
     { message: item.history.message1, position: "message1" },
     { message: item.history.message2, position: "message2" },
@@ -17,31 +16,43 @@ export function validateMessageOrder(item: IStorageItem): {
 
   let foundNull = false;
   let allowSystemMessages = true;
+  let lastNonSystemRole: "user" | "assistant" | "tool" | null = null;
 
   historyMessages.forEach(({ message, position }) => {
     const role = message.role;
 
     if (role === null) {
       foundNull = true;
-    } else {
-      // Check for gaps
-      if (foundNull) {
+      return;
+    }
+
+    // Check for gaps in message sequence
+    if (foundNull) {
+      errors.push(
+        `history.${position}: Messages must be contiguous without gaps`
+      );
+    }
+
+    // Validate system message placement
+    if (role === "system") {
+      if (!allowSystemMessages) {
         errors.push(
-          `history.${position}: Messages must be contiguous without gaps`
+          `history.${position}: System messages must be at the beginning`
+        );
+      }
+    } else {
+      // Disallow system messages after first non-system message
+      allowSystemMessages = false;
+
+      // Validate assistant message order
+      if (role === "assistant" && lastNonSystemRole !== "user") {
+        errors.push(
+          `history.${position}: Assistant message must be preceded by a user message`
         );
       }
 
-      // Check system message placement
-      if (role === "system") {
-        if (!allowSystemMessages) {
-          errors.push(
-            `history.${position}: System messages must be at the beginning`
-          );
-        }
-      } else {
-        // Disallow system messages after first non-system message
-        allowSystemMessages = false;
-      }
+      // Update last valid role for context tracking
+      lastNonSystemRole = role;
     }
   });
 
