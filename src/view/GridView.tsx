@@ -261,6 +261,7 @@ const filter_fields: TypedField[] = [
           },
           {
             type: FieldType.Button,
+            fieldRightMargin: "0",
             buttonVariant: "text",
             title: "Clear",
             click({}, {}, {}, {}, {}, onChange) {
