@@ -1,4 +1,4 @@
-import { Save, SaveAs } from "@mui/icons-material";
+import { ArrowDownward, ArrowUpward, Save, SaveAs } from "@mui/icons-material";
 import { Container } from "@mui/material";
 import { get, set } from "lodash-es";
 import {
@@ -24,6 +24,8 @@ import { validateToolCalls } from "../validation/validateToolCalls";
 import { validateMessageOrder } from "../validation/validateMessageOrder";
 import draft from "../config/draft";
 import { validateMessageTools } from "../validation/validateMessageTools";
+import { moveHistoryItemUpward } from "../utils/moveHistoryItemUpward";
+import { moveHistoryItemDownward } from "../utils/moveHistoryItemDownward";
 
 const createToolParameter = (name: string, index: number): TypedField => ({
   type: FieldType.Outline,
@@ -43,13 +45,11 @@ const createToolParameter = (name: string, index: number): TypedField => ({
       fields: [
         {
           type: FieldType.Combo,
-          itemList: [
-            "string"
-          ],
+          itemList: ["string"],
           isVisible: (data) => !!get(data, `${name}.arg${index}.name`),
           isIncorrect: (data) => {
             if (!get(data, `${name}.arg${index}.type`)) {
-              return "Required"
+              return "Required";
             }
             return null;
           },
@@ -63,7 +63,7 @@ const createToolParameter = (name: string, index: number): TypedField => ({
           isVisible: (data) => !!get(data, `${name}.arg${index}.name`),
           isIncorrect: (data) => {
             if (!get(data, `${name}.arg${index}.description`)) {
-              return "Required"
+              return "Required";
             }
             return null;
           },
@@ -108,7 +108,7 @@ const createTool = (name: string, index: number): TypedField => ({
       dirty: true,
       isIncorrect: (data) => {
         if (!get(data, `${name}.description`)) {
-          return "Required"
+          return "Required";
         }
         return null;
       },
@@ -289,13 +289,71 @@ const createMessage = (name: string, index: number): TypedField => ({
   fieldBottomMargin: "3",
   fields: [
     {
-      type: FieldType.Combo,
-      fieldBottomMargin: "5",
-      name: `${name}.message${index}.role`,
-      labelShrink: true,
-      title: "Message role",
-      description: "Select to unlock the content",
-      itemList: ["user", "assistant", "system", "tool"],
+      type: FieldType.Box,
+      sx: {
+        display: "grid",
+        alignItems: "center",
+        gridTemplateColumns: "1fr auto auto",
+      },
+      fields: [
+        {
+          type: FieldType.Combo,
+          fieldBottomMargin: "5",
+          name: `${name}.message${index}.role`,
+          labelShrink: true,
+          title: `Message ${index} role`,
+          description: "Select to unlock the content",
+          itemList: ["user", "assistant", "system", "tool"],
+        },
+        {
+          type: FieldType.Icon,
+          icon: ArrowUpward,
+          isDisabled: (item: IStorageItem) =>
+            [
+              item.history.message1,
+              item.history.message2,
+              item.history.message3,
+              item.history.message4,
+              item.history.message5,
+            ].some((message) => message === null) ||
+            index < 2 ||
+            index > 5,
+          click(
+            {},
+            {},
+            item: IStorageItem,
+            {},
+            {},
+            onChange: (item: IStorageItem) => void
+          ) {
+            onChange(moveHistoryItemUpward(item, index));
+          },
+        },
+        {
+          type: FieldType.Icon,
+          icon: ArrowDownward,
+          isDisabled: (item: IStorageItem) =>
+            [
+              item.history.message1,
+              item.history.message2,
+              item.history.message3,
+              item.history.message4,
+              item.history.message5,
+            ].some((message) => message === null) ||
+            index < 1 ||
+            index > 4,
+          click(
+            {},
+            {},
+            item: IStorageItem,
+            {},
+            {},
+            onChange: (item: IStorageItem) => void
+          ) {
+            onChange(moveHistoryItemDownward(item, index));
+          },
+        },
+      ],
     },
     {
       type: FieldType.Text,
