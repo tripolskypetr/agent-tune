@@ -231,9 +231,14 @@ const options: IBreadcrumbs2Option[] = [
             startIcon={<FilterList />}
             handler={() => filterData}
             fields={filter_fields}
-            onChange={(filterData, initial) =>
-              !initial && setFilterData(filterData)
-            }
+            onChange={(filterData, initial) => {
+              if (!initial) {
+                setFilterData(({ vector_search }) => ({
+                  ...filterData,
+                  vector_search,
+                }));
+              }
+            }}
           >
             Filters
           </OneButton>
