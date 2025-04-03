@@ -44,6 +44,7 @@ import {
   Link,
   Paper,
   Stack,
+  Typography,
 } from "@mui/material";
 import { downloadFinetune } from "../utils/downloadFinetune";
 import { convertFromFinetune } from "../utils/convertFromFinetune";
@@ -146,18 +147,19 @@ const options: IBreadcrumbs2Option[] = [
             oneSx={{
               background: "#000c",
             }}
-
             waitForChangesDelay={0}
             startIcon={<FilterList />}
             handler={() => filterData}
             fields={filter_fields}
-            onChange={(filterData, initial) => !initial && setFilterData(filterData)}
+            onChange={(filterData, initial) =>
+              !initial && setFilterData(filterData)
+            }
           >
             Filters
           </OneButton>
         </Stack>
-      )
-    }
+      );
+    },
   },
   {
     type: Breadcrumbs2Type.Button,
@@ -611,11 +613,7 @@ export const GridView = () => {
 
   return (
     <Container>
-      <Breadcrumbs2
-        items={options}
-        actions={actions}
-        onAction={handleAction}
-      />
+      <Breadcrumbs2 items={options} actions={actions} onAction={handleAction} />
       <Paper>
         <Grid
           sx={{
@@ -629,6 +627,9 @@ export const GridView = () => {
           onRowClick={handleRowClick}
         />
       </Paper>
+      <Typography variant="body2" sx={{ opacity: 0.5, mt: 0.5 }}>
+        Total: {data.length}
+      </Typography>
     </Container>
   );
 };
