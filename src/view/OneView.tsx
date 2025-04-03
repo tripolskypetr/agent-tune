@@ -308,48 +308,16 @@ const createMessage = (name: string, index: number): TypedField => ({
         {
           type: FieldType.Icon,
           icon: ArrowUpward,
-          isDisabled: (item: IStorageItem) =>
-            [
-              item.history.message1,
-              item.history.message2,
-              item.history.message3,
-              item.history.message4,
-              item.history.message5,
-            ].some((message) => message === null) ||
-            index < 2 ||
-            index > 5,
-          click(
-            {},
-            {},
-            item: IStorageItem,
-            {},
-            {},
-            onChange: (item: IStorageItem) => void
-          ) {
+          isDisabled: () => index < 2 || index > 5,
+          click({}, {}, item, {}, {}, onChange) {
             onChange(moveHistoryItemUpward(item, index));
           },
         },
         {
           type: FieldType.Icon,
           icon: ArrowDownward,
-          isDisabled: (item: IStorageItem) =>
-            [
-              item.history.message1,
-              item.history.message2,
-              item.history.message3,
-              item.history.message4,
-              item.history.message5,
-            ].some((message) => message === null) ||
-            index < 1 ||
-            index > 4,
-          click(
-            {},
-            {},
-            item: IStorageItem,
-            {},
-            {},
-            onChange: (item: IStorageItem) => void
-          ) {
+          isDisabled: () => index < 1 || index > 4,
+          click({}, {}, item, {}, {}, onChange) {
             onChange(moveHistoryItemDownward(item, index));
           },
         },
