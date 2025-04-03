@@ -1,15 +1,15 @@
 import {
   Add,
-  CloudUpload,
+  Close,
   CopyAll,
   DataObject,
   Delete,
   DeleteForever,
   Edit,
   FileOpen,
+  FilterList,
   MoveToInbox,
   Outbox,
-  Publish,
   Refresh,
   Save,
 } from "@mui/icons-material";
@@ -33,9 +33,18 @@ import {
   useOne,
   TypedField,
   FieldType,
+  OneButton,
 } from "react-declarative";
 import history from "../config/history";
-import { Checkbox, Container, Paper } from "@mui/material";
+import {
+  Box,
+  Breadcrumbs,
+  Checkbox,
+  Container,
+  Link,
+  Paper,
+  Stack,
+} from "@mui/material";
 import { downloadFinetune } from "../utils/downloadFinetune";
 import { convertFromFinetune } from "../utils/convertFromFinetune";
 import { fields } from "./OneView";
@@ -43,8 +52,21 @@ import { downloadStorage } from "../utils/downloadStorage";
 import draft from "../config/draft";
 import { downloadFinetuneSft } from "../utils/downloadFinetune.sft";
 import { convertFromFinetuneSft } from "../utils/convertFromFinetune.sft";
+import { useFilterData } from "../context/FilterDataContext";
 
 const getDraftId = singleshot(() => draft.getValue()?.id ?? null);
+
+const compareFulltext = (search: string, data: string) => {
+  const target = String(search || "")
+    .toLowerCase()
+    .split(" ");
+  const source = String(data || "")
+    .toLowerCase()
+    .split(" ");
+  return target.every(function (term) {
+    return source.some((word) => word.includes(term));
+  });
+};
 
 const columns: IGridColumn[] = [
   {
@@ -105,12 +127,37 @@ const rowActions: IGridAction[] = [
 
 const options: IBreadcrumbs2Option[] = [
   {
-    type: Breadcrumbs2Type.Link,
-    label: "Fine tune",
-  },
-  {
-    type: Breadcrumbs2Type.Link,
-    label: "Grid",
+    type: Breadcrumbs2Type.Component,
+    element: () => {
+      const [filterData, setFilterData] = useFilterData();
+      return (
+        <Stack direction="row" alignItems="center" gap={1}>
+          <Breadcrumbs aria-label="breadcrumb">
+            <Link underline="hover" color="inherit">
+              Fine tune
+            </Link>
+            <Link underline="hover" color="inherit">
+              Grid
+            </Link>
+          </Breadcrumbs>
+          <Box sx={{ flex: 1 }} />
+          <OneButton
+            variant="outlined"
+            oneSx={{
+              background: "#000c",
+            }}
+
+            waitForChangesDelay={0}
+            startIcon={<FilterList />}
+            handler={() => filterData}
+            fields={filter_fields}
+            onChange={(filterData, initial) => !initial && setFilterData(filterData)}
+          >
+            Filters
+          </OneButton>
+        </Stack>
+      )
+    }
   },
   {
     type: Breadcrumbs2Type.Button,
@@ -183,6 +230,84 @@ const actions: IBreadcrumbs2Action[] = [
     label: "Remove all",
     icon: DeleteForever,
     action: "remove-all-action",
+  },
+];
+
+const filter_fields: TypedField[] = [
+  {
+    type: FieldType.Box,
+    sx: {
+      pr: 1,
+      pl: 1,
+    },
+    fields: [
+      {
+        type: FieldType.Box,
+        sx: {
+          display: "grid",
+          gridTemplateColumns: "auto 1fr auto",
+          alignItems: "center",
+        },
+        fields: [
+          {
+            type: FieldType.Typography,
+            typoVariant: "h6",
+            placeholder: "Row filters",
+          },
+          {
+            type: FieldType.Div,
+          },
+          {
+            type: FieldType.Button,
+            buttonVariant: "text",
+            title: "Clear",
+            click({}, {}, {}, {}, {}, onChange) {
+              onChange({
+                user_input: "",
+                prefered_output: "",
+                non_prefered_output: "",
+              });
+            },
+          },
+        ],
+      },
+      {
+        type: FieldType.Text,
+        fieldRightMargin: "0",
+        outlined: true,
+        name: "user_input",
+        title: "User input",
+        placeholder: "Text for fulltext search",
+        trailingIcon: Close,
+        trailingIconClick({}, {}, {}, onValueChange) {
+          onValueChange("");
+        },
+      },
+      {
+        type: FieldType.Text,
+        fieldRightMargin: "0",
+        outlined: true,
+        name: "prefered_output",
+        title: "Prefered output",
+        placeholder: "Text for fulltext search",
+        trailingIcon: Close,
+        trailingIconClick({}, {}, {}, onValueChange) {
+          onValueChange("");
+        },
+      },
+      {
+        type: FieldType.Text,
+        fieldRightMargin: "0",
+        outlined: true,
+        name: "non_prefered_output",
+        title: "Non-Prefered output",
+        placeholder: "Text for fulltext search",
+        trailingIcon: Close,
+        trailingIconClick({}, {}, {}, onValueChange) {
+          onValueChange("");
+        },
+      },
+    ],
   },
 ];
 
@@ -264,6 +389,8 @@ const export_fields: TypedField<{}, { isHfOnly: boolean }>[] = [
 ];
 
 export const GridView = () => {
+  const [filterData] = useFilterData();
+
   const pickFinetuneFormat = useOne({
     title: "Pick finetune format",
     fields: export_fields,
@@ -282,11 +409,41 @@ export const GridView = () => {
     canCancel: true,
   });
 
-  const [data, { loading, execute }] = useAsyncValue(() => {
-    getDraftId.clear();
-    const items = storage.getValue();
-    return items ? items : [];
-  });
+  const [data, { loading, execute }] = useAsyncValue(
+    () => {
+      getDraftId.clear();
+      const data = storage.getValue();
+      const items = data ? data : [];
+      return items.filter((item) => {
+        let isOk = true;
+        if (filterData.user_input) {
+          isOk =
+            isOk &&
+            compareFulltext(filterData.user_input, item?.input?.content);
+        }
+        if (filterData.prefered_output) {
+          isOk =
+            isOk &&
+            compareFulltext(
+              filterData.prefered_output,
+              item?.preferred_output?.content
+            );
+        }
+        if (filterData.non_prefered_output) {
+          isOk =
+            isOk &&
+            compareFulltext(
+              filterData.non_prefered_output,
+              item?.non_preferred_output?.content
+            );
+        }
+        return isOk;
+      });
+    },
+    {
+      deps: [filterData],
+    }
+  );
 
   useOnce(async () => {
     const data = draft.getValue();
@@ -454,7 +611,11 @@ export const GridView = () => {
 
   return (
     <Container>
-      <Breadcrumbs2 items={options} actions={actions} onAction={handleAction} />
+      <Breadcrumbs2
+        items={options}
+        actions={actions}
+        onAction={handleAction}
+      />
       <Paper>
         <Grid
           sx={{

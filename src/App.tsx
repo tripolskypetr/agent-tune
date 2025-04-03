@@ -3,6 +3,7 @@ import GridView from "./view/GridView";
 import OneView from "./view/OneView";
 import windowHistory from "./config/history";
 import ToolPage from "./view/ToolPage";
+import { FilterDataProvider, INITIAL_FILTERS } from "./context/FilterDataContext";
 
 const routes: ISwitchItem[] = [
   {
@@ -17,17 +18,14 @@ const routes: ISwitchItem[] = [
     path: "/:id",
     element: OneView,
   },
-  
 ];
 
 export const App = () => {
-
   return (
-    <Switch
-      items={routes}
-      history={windowHistory}
-    />
+    <FilterDataProvider initialState={INITIAL_FILTERS}>
+      <Switch items={routes} history={windowHistory} />
+    </FilterDataProvider>
   );
-}
+};
 
 export default App;
