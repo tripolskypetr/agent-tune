@@ -40,12 +40,10 @@ import {
 import history from "../config/history";
 import {
   Box,
-  Breadcrumbs,
   Checkbox,
   Container,
   IconButton,
   InputAdornment,
-  Link,
   Paper,
   Stack,
   TextField,
@@ -62,8 +60,9 @@ import { useFilterData } from "../context/FilterDataContext";
 import { div, mul, norm, ready, sum, tensor1d } from "@tensorflow/tfjs-core";
 import SortedArray from "../helpers/SortedArray";
 import { useState } from "react";
+import { load } from "@tensorflow-models/universal-sentence-encoder";
 
-const VECTOR_SEARCH_SIMILARITY = 0.65;
+const VECTOR_SEARCH_SIMILARITY = 0.2;
 
 const getDraftId = singleshot(() => draft.getValue()?.id ?? null);
 
@@ -79,22 +78,22 @@ const compareFulltext = (search: string, data: string) => {
   });
 };
 
-const createVector = async (text: string) => {
+const loadEncoder = singleshot(async () => {
+  return await load();
+});
+
+ready().then(loadEncoder);
+
+async function createVector(text) {
   await ready();
-  const words = text.toLowerCase().trim().split(/\s+/);
-  const vector = new Float32Array(4);
-  words.forEach((word, index) => {
-    let sum = 0;
-    for (let i = 0; i < word.length; i++) {
-      sum += word.charCodeAt(i) / 1000;
-    }
-    vector[index % 4] += sum / (word.length || 1);
-  });
-  const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
-  return await Array.fromAsync(
-    magnitude ? vector.map((v) => v / magnitude) : vector
-  );
-};
+  const model = await loadEncoder();
+  const cleanedText = text.trim();
+  const embeddings = await model.embed([cleanedText]);
+  const embeddingArray = await embeddings.array();
+  const vector = new Float32Array(embeddingArray[0]);
+  embeddings.dispose();
+  return Array.from(vector);
+}
 
 const calculateSimilarity = async (a: number[], b: number[]) => {
   await ready();
