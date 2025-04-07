@@ -173,7 +173,18 @@ function downloadFinetune(
     storageItems = mapOpenAi(storageItems) as unknown as IStorageItem[];
   }
 
-  const jsonlContent = convertToFinetune(storageItems);
+  let jsonlContent = convertToFinetune(storageItems);
+
+  if (format === "hf") {
+    jsonlContent = jsonlContent
+      .split("\n")
+      .map((line) => {
+        const json = JSON.parse(line);
+        json.input.parallel_tool_calls = false;
+        return JSON.stringify(json);
+      })
+      .join("\n");
+  }
 
   const blob = new Blob([jsonlContent], { type: "text/plain;charset=utf-8" });
 
